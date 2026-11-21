@@ -1,125 +1,136 @@
-# Bil — Portfolio
+# Larpbil — Larping Portfolio
 
-### Muhamad Nabil Faiz Amrullah — Informatics Student & Full-Stack Developer
+A personal developer portfolio built with Next.js to showcase my projects, technical skills, professional experience, and interests.
 
-NIM 242502040042 · Class 3TI01 · Semester 5
-Teknik Informatika, Universitas Cendekia Abditama (UCA) — Tangerang, Indonesia
+**Live Website:** nanti
 
-A fast, responsive, and minimal portfolio showcasing my projects, technical blog posts, skills, and journey as a developer.
+## Features
 
-> **Template credit:** built on [devfolio-v2 by igmoni](https://github.com/igmoni/devfolio-v2). The template is igmoni's work; all personal content here (projects, blog, identity, images) is Bil's own. No sponsor, database, or payment code from the template is included in this version.
-
----
-
-## About
-
-- **Warlok** — fandom community website (novels, fanart, comics), Next.js + Supabase
-- **CyberShield** — cybersecurity dashboard (firewall, traffic, attack sims), React + Recharts
-- **IoT Ojol Navigation** — ESP32 + 2.4" TFT companion display for ojol drivers
-- **TugasKita** — task manager with Google Drive integration, Next.js + Supabase
-- **Video Multimedia AI** — 5.5-minute motion-graphics video on Teknologi & AI
-
-Plus two blog posts: building Warlok with Next.js + Supabase, and showing a phone map on an ESP32 + TFT display.
-
-## Links
-
-- GitHub: https://github.com/Aaronabil
-- X: https://x.com/aaronabil_aster
-- Email: nabilmuhamad630@gmail.com
+- **Home** — Introduction, developer profile, and coding activity.
+- **Projects** — Project showcases, technologies, and links to source code and live demos.
+- **Blog** — Technical articles and personal insights written in MDX.
+- **Experience** — Professional experience and career journey.
+- **Resume** — Access to my professional resume.
+- **Development Setup** — Editor configuration, development tools, and setup.
+- **Books, Movies & Gears** — Books, movies, devices, and tools I enjoy.
+- **Contact Form** — Contact submissions delivered through Resend.
+- **Live Coding Activity** — WakaTime integration for coding activity and editor status.
+- **Spotify Integration** — Spotify API integration for music-related data.
+- **Analytics** — Umami analytics and Vercel Analytics.
+- **SEO** — Page metadata, Open Graph previews, sitemap, robots.txt, and a custom not-found page.
+- **Responsive Design** — Layouts optimized for desktop and mobile.
+- **Dark & Light Themes** — Theme switching with animated transitions.
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 App Router
+- **Framework:** Next.js App Router
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS v4
+- **Styling:** Tailwind CSS
 - **UI Components:** shadcn/ui
 - **Content:** MDX
 - **Icons:** Lucide React
+- **Coding Activity:** WakaTime API
+- **Music Integration:** Spotify API
+- **Email:** Resend
+- **Analytics:** Umami and Vercel Analytics
 - **Deployment:** Vercel
 
-## Running Locally
+## Getting Started
 
-Install dependencies:
+### Prerequisites
+
+- Node.js
+- npm
+- Git
+
+### 1. Clone the repository
+
+```bash
+git clone <your-repository-url>
+cd devfolio-v2
+```
+
+Replace `<your-repository-url>` with your Git repository URL.
+
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-Start the development server:
+### 3. Configure environment variables
+
+Copy the example environment file to create your local configuration.
+
+**Windows PowerShell:**
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+**macOS / Linux:**
+
+```bash
+cp .env.example .env.local
+```
+
+Open `.env.local` and add your own credentials and configuration values.
+
+Not every integration is required to run the portfolio. Configure the variables needed by the features you want to use.
+
+| Variable                            | Purpose                                                    |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `SPOTIFY_CLIENT_ID`                 | Spotify application client ID                              |
+| `SPOTIFY_CLIENT_SECRET`             | Spotify application client secret                          |
+| `SPOTIFY_REFRESH_TOKEN`             | Spotify refresh token                                      |
+| `SPOTIFY_REDIRECT_URI`              | Spotify OAuth redirect URI                                 |
+| `SITE_URL`                          | Website base URL used for metadata and canonical URLs      |
+| `WAKATIME_OAUTH_TOKEN`              | Personal WakaTime OAuth token                              |
+| `WAKATIME_TIMEZONE`                 | Timezone used for coding activity summaries                |
+| `WAKATIME_ONLINE_THRESHOLD_SECONDS` | Threshold used to determine recent coding activity         |
+| `VERCEL_TOKEN`                      | Vercel API token, if required by the analytics integration |
+| `UMAMI_SRC`             | Umami tracking script URL                                  |
+| `UMAMI_ID`              | Umami website ID                                           |
+| `RESEND_API_KEY`                    | Resend API key for contact emails                          |
+| `CONTACT_EMAIL`                     | Recipient email for contact submissions                    |
+| `RESEND_FROM_EMAIL`                 | Sender address authorized by Resend                        |
+
+**Important:** Never commit `.env.local` or share real API keys, secrets, refresh tokens, or OAuth tokens. Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser, so only use them for values intended to be public.
+
+### 4. Start the development server
 
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser.
-
-Build for production:
-
-```bash
-npm run build
-npm run start
-```
-
-Set the public site URL (used for canonical links, sitemap, and Open Graph) with:
-
-```bash
-SITE_URL=https://your-domain.vercel.app npm run build
-```
-
-Without it, the site defaults to `http://localhost:3000`.
-
-### Environment variables
-
-Copy `.env.example` to `.env.local`. Everything is optional:
-
-| Variable | Purpose |
-| --- | --- |
-| `SITE_URL` | Website base URL used for metadata and canonical URLs |
-| `RESEND_API_KEY` / `CONTACT_EMAIL` / `RESEND_FROM_EMAIL` | Resend contact form (optional) |
-| `SPOTIFY_*` | Spotify now-playing (not configured) |
-| `WAKATIME_*` | WakaTime coding activity (not configured) |
-| `NEXT_PUBLIC_UMAMI_*` | Umami analytics (not configured) |
-
-**Important:** never commit `.env.local` or share real API keys, secrets, or tokens.
-
-## What was removed / disabled vs the template
-
-- **Sponsors removed entirely:** sponsor UI/components/routes, Dodo Payments checkout + webhook API routes, `src/lib/sponsors/`, `src/lib/prisma.ts`, the `prisma/` directory, and the Prisma/Dodo/`@vercel/blob` dependencies + `postinstall prisma generate` script. The build passes with no database and no Dodo env vars.
-- **Spotify, WakaTime, Vercel Analytics, Umami, InsightCard:** removed from the home page and their API routes deleted. No keys needed.
-- **Geo-tracking proxy (`src/proxy.ts`, `@usenotra/geo`):** removed — it sent visitor data to a third-party ingest endpoint.
-- **Buy Me a Coffee / Coffee button:** removed.
-- **Side Quests page:** removed (gym stats and languages were the template author's).
-- **Books / Movies pages:** kept, but empty with an honest note — Bil does not publish a reading or watch list here yet. No books or movies were invented.
-- **Resume page:** no PDF resume exists yet, so the page is a summary (identity, education, projects, skills) with links to GitHub and the project pages.
-- **Profile photo:** placeholder initials avatar at `public/assets/bil-avatar.svg`. To use a real photo, replace it with `avatar.jpg` (square) and update `src/components/home/HeroAvatar.tsx`; the banner is a gradient, drop a `banner.jpg` in `public/` if a photo banner is wanted.
-- **Contact form:** works only when Resend is configured. Without it, the API fails gracefully and tells visitors to email Bil directly at nabilmuhamad630@gmail.com.
-
-## How to edit content
-
-- **Name, title, links, socials:** `src/config/hero.ts`
-- **Experience:** `src/config/experience.ts` (student + project experience only — no job invented)
-- **Skills:** `src/config/skills.tsx`
-- **Projects:** case studies in `src/data/projects/*.mdx` (frontmatter: `title`, `shortTitle`, `description`, `about`, `image`, `stack`, `github`, `live`, `timeline`, `role`, `team`, `status`, `isPublished`, `date`)
-- **Blog posts:** add an `.mdx` file in `src/data/blog/` (frontmatter: `title`, `desc`, `image`, `tags`, `date`, `isPublished`)
-- **Gears / setup:** `src/lib/gears.ts` and `src/lib/setup.ts`
-- **Site metadata / URL:** `src/config/meta.ts`, `src/app/sitemap.ts`, `src/app/robots.ts`
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Available Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the development server |
+| Command         | Description                          |
+| --------------- | ------------------------------------ |
+| `npm run dev`   | Start the development server         |
 | `npm run build` | Build the application for production |
-| `npm run start` | Start the production server |
-| `npm run lint` | Run ESLint |
+| `npm run start` | Start the production server          |
+| `npm run lint`  | Run ESLint                           |
 
 ## Deployment
 
+This portfolio can be deployed on Vercel.
+
 1. Push the repository to GitHub.
 2. Import the repository into Vercel.
-3. Set `SITE_URL` to the production website URL.
-4. Deploy. No database and no extra env vars are required; add `RESEND_*` only if the contact form should send email.
+3. Configure the required environment variables in your Vercel project settings.
+4. Set `SITE_URL` to your production website URL.
+5. Deploy the application.
+6. Verify the contact form, Spotify integration, WakaTime widget, analytics, metadata, sitemap, and robots.txt.
+
+Environment variables configured in `.env.local` are not automatically added to Vercel. Add the required values in the Vercel dashboard.
+
+## Contributing
+
+Suggestions and improvements are welcome. If you plan to reuse or adapt this project, please respect the personal content, branding, and assets included in the portfolio.
 
 ## License
 
-No open-source license is currently specified for the template. Unless a license is added, do not assume the template's code, branding, or assets are licensed for unrestricted reuse. Bil's own content (projects, blog posts, images) is his.
+No open-source license is currently specified. Unless a license is added to this repository, do not assume that the project's code, branding, content, or assets are licensed for unrestricted reuse.
