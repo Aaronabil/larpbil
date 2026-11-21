@@ -47,7 +47,7 @@ A personal developer portfolio built with Next.js to showcase my projects, techn
 
 ```bash
 git clone <your-repository-url>
-cd devfolio-v2
+cd larpbil
 ```
 
 Replace `<your-repository-url>` with your Git repository URL.
