@@ -1,6 +1,6 @@
 import { getBlogs } from "@/lib/blog";
 
-const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(
+const SITE_URL = (process.env.SITE_URL || "https://larpbil.vercel.app").replace(
   /\/+$/,
   ""
 );

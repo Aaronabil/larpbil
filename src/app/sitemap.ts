@@ -1,5 +1,5 @@
 export default function sitemap() {
-  const baseUrl = (process.env.SITE_URL || "http://localhost:3000").replace(
+  const baseUrl = (process.env.SITE_URL || "https://larpbil.vercel.app").replace(
     /\/+$/,
     ""
   );

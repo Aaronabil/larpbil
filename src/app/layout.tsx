@@ -18,9 +18,9 @@ import { AppProviders } from "@/providers/AppProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(process.env.SITE_URL || "https://larpbil.vercel.app"),
   alternates: {
-    canonical: process.env.SITE_URL || "http://localhost:3000",
+    canonical: process.env.SITE_URL || "https://larpbil.vercel.app",
   },
   title: {
     default: "Muhamad Nabil Faiz Amrullah - Full-Stack Developer",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 
   openGraph: {
     type: "website",
-    url: process.env.SITE_URL || "http://localhost:3000",
+    url: process.env.SITE_URL || "https://larpbil.vercel.app",
     title:
       "Muhamad Nabil Faiz Amrullah - Full-Stack Developer",
     description:
