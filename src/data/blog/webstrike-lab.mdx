@@ -1,0 +1,104 @@
+---
+title: "WebStrike Lab"
+desc: "A suspicious file was identified on a company web server, raising alarm bells among the IT team."
+image: "/blog/webstrike-lab/img-01.png"
+tags: ["ctf", "writeup", "web"]
+date: "2026-03-06"
+isPublished: true
+---
+
+# WebStrike Lab
+
+### Scenario
+
+A suspicious file was identified on a company web server, raising alarms within the intranet. The Development team flagged the anomaly, suspecting potential malicious activity. To address the issue, the network team captured critical network traffic and prepared a PCAP file for review.
+
+Your task is to analyze the provided PCAP file to uncover how the file appeared and determine the extent of any unauthorized activity.
+
+### Pendahuluan
+
+Disini saya mendapatkan sebuah virtual machine yang di dalam file manager dibagian desktop terdapat 2 folder, folder **Artifacts** dan folder **Tools**, folder Artifacts berisi file **WebStrike.pcap** dan folder Tools berisi aplikasi-aplikasi yang bisa membantu saya dalam menjawab soal-soal
+
+### Question 1
+
+Identifying the geographical origin of the attack facilitates the implementation of geo-blocking measures and the analysis of threat intelligence. From which city did the attack originate?
+
+Answer: Tianjin
+
+Explain: Pertama saya buka file WebStrike.pcap di wireshark dan mencari tahu mana ip yang korban dan attackers, disini saya menemukan bahwa ip attackers adalah **`117.11.88.124`**** **karena ip tersebut melakukan request ke destination `24.49.63.79` yang merupakan ip korban
+
+![screenshot](/blog/webstrike-lab/img-01.png)
+
+Jadi saya menggunakan ip attackers untuk mengetahui dari kota manakah serangan berasal
+
+```bash
+curl -s http://ip-api.com/json/117.11.88.124
+```
+
+Output:
+
+![screenshot](/blog/webstrike-lab/img-02.png)
+
+Disini terlihat bahwa attackers berasal dari kota Tianjin
+
+### Question 2
+
+Knowing the attacker's User-Agent assists in creating robust filtering rules. What's the attacker's Full User-Agent?
+
+Answer: Mozilla/5.0 (X11; Linux x86\_64; rv:109.0) Gecko/20100101 Firefox/115.0
+
+Explain: Saya membuka file WebStike.pcap di Network Miner dan membuka hosts ip dari attackers dan dibagian host details saya bisa mengetahui full user agent dari attackers
+
+![screenshot](/blog/webstrike-lab/img-03.png)
+
+### Question 3
+
+We need to determine if any vulnerabilities were exploited. What is the name of the malicious web shell that was successfully uploaded?
+
+Answer: image.jpg.php
+
+Explain: Saya membuka kembali wireshark dan menganalisis lalu menemukan file yang berhasil di upload, file tersebut image.jpg.php, disini attackers memanipulasi file image.jpg dan menambahkan .php dibelakangnya agar bisa menjalankan scriptnya
+
+![screenshot](/blog/webstrike-lab/img-04.png)
+
+![screenshot](/blog/webstrike-lab/img-05.png)
+
+### Question 4
+
+Identifying the directory where uploaded files are stored is crucial for locating the vulnerable page and removing any malicious files. Which directory is used by the website to store the uploaded files?
+
+Answer: /reviews/uploads/
+
+Explain: Di wireshark juga disana sudah jelas tertera directory yang digunakan untuk menyimpan file yang diupload, karena di Question 3 pun sudah terlihat directorynya, directorynya adalah /reviews/uploads/
+
+![screenshot](/blog/webstrike-lab/img-06.png)
+
+![screenshot](/blog/webstrike-lab/img-07.png)
+
+### Question 5
+
+Which port, opened on the attacker's machine, was targeted by the malicious web shell for establishing unauthorized outbound communication?
+
+Answer: 8080
+
+Explain: Saya menganalisis kembali pada wireshark dan network miner, di wireshark terlihat bahwa port yang dibuka oleh attackernya adalah port 8080
+
+![screenshot](/blog/webstrike-lab/img-08.png)
+
+dan di network miner pun bisa terlihat
+
+![screenshot](/blog/webstrike-lab/img-09.png)
+
+### Question 6
+
+Recognizing the significance of compromised data helps prioritize incident response actions. Which file was the attacker attempting to exfiltrate?
+
+Answer: passwd
+
+Explain: File yang dicoba disusupi attackers adalah file passwd, di wireshark terlihat ada beberapa baris yang berwarna hitam dan textnya berwarna merah, warna ini adalah menandakan adanya error
+
+![screenshot](/blog/webstrike-lab/img-10.png)
+
+dan saat follow tcpnya disana terdapat file yang dicoba untuk dieksfiltrasi oleh si attackers, yaitu file passwd
+
+![screenshot](/blog/webstrike-lab/img-11.png)

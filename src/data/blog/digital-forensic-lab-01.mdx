@@ -1,0 +1,113 @@
+---
+title: "Digital Forensic Lab-01"
+desc: "Tugas minggu pertama Bootcamp Cyberdefense ID-Networkers: perintah dasar Linux, hash file, dan perintah file."
+image: "/blog/digital-forensic-lab-01/img-01.png"
+tags: ["ctf", "writeup", "forensic"]
+date: "2026-02-16"
+isPublished: true
+---
+
+# Digital Forensic Lab-01
+
+Ini adalah tugas minggu pertama dari Bootcamp Cyberdefense ID-Networkers
+
+### Question
+
+1. If we wanted to list all the .txt files in the current directory, what command would we want to use?
+
+   Jawab: Kita bisa menggunakan perintah `ls *.txt`, karena simbol \* itu artinya adalah all atau semua, jadi kita menampilkan semua file .txt
+
+
+2. What command can we use to read the contents of the file /etc/passwd?
+
+   Jawab: Kita bisa menggunakan perintah cat untuk membuat suatu file, jadi jika kita ingin membaca isi file /etc/passwd kita menggunakan perintah `cat /etc/passwd `
+
+
+3. If we wanted to search for the string Error in all files in the /var/log directory, what would our command be?
+
+   Jawab: Kita bisa menggunakan perintah `grep -r “Error” /var/log,` karena perintah grep itu berfungsi untuk mencari sebuah string dan maksud command -r adalah opsi yang memberitahu grep untuk mencari string di dalam directory /var/log
+
+
+4. What would be the commands to calculate MD5 and SHA1 hashes of the file /etc/passwd?
+
+   Jawab: Kita bisa menggunakan perintah `md5sum` dan `sha1sum`, jadi jika ingin calculate md5 menggunakan perintah `md5sum /etc/passwd` dan jika ingin calculate sha1 menggunakan perintah` sha1sum /etc/passwd`
+
+
+5. Use the `file` command to determine the type of the file `/usr/bin/cat` and explain the output in 2-3 sentences.
+
+   Jawab:
+
+
+
+```bash
+   file /usr/bin/cat
+
+   output: /usr/bin/cat: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=494344ee95580ab114995448d0e1d379638782b4, for GNU/Linux 3.2.0, stripped
+   ```
+
+
+   Jadi file /usr/bin/cat adalah sebuah file ELF 64-bit LSB executable, yang artinya ini adalah file biner yang bisa dieksekusi. File ini juga bersifat dynamically linked, artinya dia mengandalkan interpreter (/lib64/ld-linux-x86-64.so.2) untuk memuat pustaka sistem yang diperlukan saat dijalankan.
+
+
+6. What command can we use to display all printable strings of length ≥ 8 in the file /bin/bash?
+
+   Jawab: Kita bisa menggunakan perintah `strings -n 8 /bin/bash`, yang dimana perintah -n digunakan untuk menentukan panjangnya length
+
+
+7. Given the following output of the `file` command, can you determine what’s wrong with this file?
+
+```bash
+   $ file image.jpg
+   image.jpg: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=3ab23bf566f9a955769e5096dd98093eca750431, for GNU/Linux 3.2.0, not stripped
+   ```
+
+
+   Jawab: Yang salah adalah isinya ELF 64-bit LSB executable yang dimana itu adalah program biner, harusnya kan kalau beneran gambar munculnya itu JPEG image data dan jika dijalankan berpotensi malware
+
+
+8. If we wanted to look for files modified in the last 30 minutes in `/home` directory, what command would we want to use?
+
+   Hint: Explore how you can use `find` command to achieve this.
+
+
+
+   Jawab: Kita bisa menggunakan perintah `find /home -nmin -30,` yang dimana command -nmin maksudnya adalah mencari berdasarkan menit (modification minutes) dan -30 adalah file yang dimodifikasi kurang dari 30 menit
+
+
+9. What command can we use to display information about all active TCP connections on the system?
+
+   Jawab: Kita bisa menggunakan perintah `netstat -ano` untuk menampilkan semua TCP connections, maksud dari -a adalah menampilkan semua port dan connection yang aktif, maksud dari -n adalah menampilkan numerical addresses dan port numbers dan maksud dari -o adalah menampilkan proses IDU (PID)
+
+
+10. Given [this corrupted image file](https://github.com/vonderchild/digital-forensics-lab/blob/main/Lab%2001/files/challenge.png), can you find a way to recover and view its contents?  
+Hint 1: A quick google search for “magic bytes” might help.
+
+    Hint 2: Explore how `hexedit` can help you here.  
+You may download the image using following command:
+
+
+
+```bash
+    curl [https://raw.githubusercontent.com/vonderchild/digital-forensics-lab/main/Lab 01/files/challenge.png](https://raw.githubusercontent.com/vonderchild/digital-forensics-lab/main/Lab%2001/files/challenge.png) -o challenge.png
+    ```
+
+
+    Jawab: Disini saya mendapatkan file challenge.png yang tidak bisa dibuka, karena di hint tertulis bytes jadi saya mengecek bytesnya
+
+
+    ![screenshot](/blog/digital-forensic-lab-01/img-01.png)
+
+
+    dan ternyata ada bytes yang salah, 4 angka paling depan harusnya bukan seperti itu harusnya 8950 agar menjadi PNG bukan 1729, jadi saya mengubah menggunakan
+
+
+
+```bash
+    hexedit challenge.png
+    ```
+
+
+    dan saya bisa membuka filenya
+
+
+    ![screenshot](/blog/digital-forensic-lab-01/img-02.png)

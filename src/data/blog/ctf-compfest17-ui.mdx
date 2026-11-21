@@ -1,0 +1,270 @@
+---
+title: "Write-Up CTF COMPFEST17 Universitas Indonesia"
+desc: "Write-up CTF COMPFEST17 Universitas Indonesia: ezzz jail (Misc), Phantom-Thieves (Blockchain), dan dua challenge Forensic."
+image: "/blog/ctf-compfest17-ui/img-01.png"
+tags: ["ctf", "writeup"]
+date: "2025-08-25"
+isPublished: true
+---
+
+# Write-Up CTF COMPFEST17 Universitas Indonesia
+
+## Team DJ OHIM
+
+### Anggota:
+
+1. aaronabil (captain)
+2. IsFaktuear
+
+**Chall: ezzz jail \[revenge\] (Misc) **
+
+![screenshot](/blog/ctf-compfest17-ui/img-01.png)
+
+Skenario:
+
+Challenge menjalankan REPL Python yang memakai RestrictedPython.  
+Beberapa nama dan builtins dibatasi (mis. variabel/func dengan underscore \_  
+ditolak, exit/quit dihapus, print tidak tersedia normal). Namun open()  
+masih tersedia dan kita bisa membaca file flag.txt. Tantangan utama:  
+bagaimana menampilkan isi file? Kita gunakan mekanik Python — memaksa  
+exception untuk mencetak isi flag di traceback.
+
+Payload yang berhasil:
+
+![screenshot](/blog/ctf-compfest17-ui/img-02.png)
+
+Langkah-langkah eksploit manual…
+
+1. Sambungkan ke service:
+   ![screenshot](/blog/ctf-compfest17-ui/img-03.png)
+2. Kirim payload (format b64 diterima oleh chall):
+
+![screenshot](/blog/ctf-compfest17-ui/img-04.png)
+
+3. Output akan menampilkan traceback; di sana tercantum isi flag (mis.  
+CTF\{...\}).
+
+Jika ingin coba raw (tanpa base64), cukup ketik langsung:
+
+![screenshot](/blog/ctf-compfest17-ui/img-05.png)
+
+atau
+
+![screenshot](/blog/ctf-compfest17-ui/img-06.png)
+
+Dan dapet deh flag nya…
+
+**Chall: Phantom-Thieves (Blockchain)**
+
+![screenshot](/blog/ctf-compfest17-ui/img-07.png)
+
+Skenario:
+
+Pertama-tama saya memahami dulu kondisi isSolved(). Dalam tantangan ini,  
+fungsi isSolved() ada di dalam kontrak Setup.sol. Didalam kode Setup.sol,  
+tujuannya menjadi jelas. Pertama harus memanipulasi state kontrak sedemikian  
+rupa sehingga ketika openVault() di panggil, eksekusinya gagal(revert) dengan  
+error noShares().
+
+
+Error NoShares() hanya ada di satu tempat, yaitu di dalam fungsi openVault()  
+pada kontrak Fortress.sol.
+
+
+wouldMint akan menjadi 0 jika (depositAmount \* currentShares) lebih kecil dari  
+currentBalance. Karena solidity menggunakan pembagian integer yang  
+membulatkan ke bawah, setiap hasil pembagian yang kurang dari 1 akan  
+menjadi 0.
+
+- depositAmount: Nilai ini tetap (0.5 ether)
+
+- currentShares: Total shares di dalam Vault
+
+- currentBalance: Total token PHTM yang dimiliki oleh kontrak Vault
+
+Kerentanan muncul dari asumsi yang salah dalam perhitungan ini. Kontrak Vault  
+mengasumsikan bahwa currentBalance hanya akan bertambah melalui fungsi  
+deposit(), yang secara proporsional juga akan menambah totalShares.
+
+
+Namun, tidak ada yang bisa menghentikan untuk mengirim token langsung ke  
+alamat Vault menggunakan fungsi transfer() pada kontrak token. Jika melakukan  
+ini, currentBalance akan meningkat drastis sementara totalShares tetap tidak  
+berubah. Ini akan menginflate nilai dari setiap share yang merusak rasio yang  
+digunakan dalam perhitungan.
+
+**Exploitasi**
+
+1. Beli sejumlah token PHTM agar kita memiliki modal untuk serangan
+2. Lakukan deposit dengan jumlah yang sangat kecil (misalnya 1 wei). Ini adalah  
+langkah krusial untuk membuat totalShares menjadi lebih dari nol, sehingga  
+logika perhitungan wouldMint tidak jatuh ke kasus pertama (currentShares  
+== 0). Setelah langkah ini, totalShares akan menjadi 1 dan currentBalance  
+juga 1.
+3. Transfer sisa token kita langsung ke alamat kontrak Vault. Langkah ini akan  
+membuat currentBalance melonjak tinggi, misalnya menjadi 1 ether.
+4. Ketika isSolved() mensimulasikan panggilan openVault(), perhitungan  
+wouldMint akan menjadi:
+   - wouldMint = (0.5 ether \* 1) / 1 ether
+   - wouldMint = 0.5
+   - Karena pembagian integer, hasilnya dibulatkan ke bawah menjadi 0
+   - Kondisi if (wouldMint == 0) akan terpenuhi, dan kontrak akan revert  
+dengan NoShares()
+
+Scriptnya:
+
+```bash
+export RPC_URL="isi rpc url"
+export PRIVKEY="isi private key"
+export SETUP_CONTRACT_ADDR="isi setup contract address"
+export FORTRESS_ADDR=$(cast call $SETUP_CONTRACT_ADDR "challenge()" --rpc-url $RPC_URL | awk '{print "0x" substr($0, 27)}')
+export TOKEN_ADDR=$(cast call $FORTRESS_ADDR "token()" --rpc-url $RPC_URL | awk '{print "0x" substr($0, 27)}')
+export VAULT_ADDR=$(cast call $FORTRESS_ADDR "vault()" --rpc-url $RPC_URL | awk '{print "0x" substr($0, 27)}')
+echo "Fortress Address: $FORTRESS_ADDR"
+echo "Token Address: $TOKEN_ADDR"
+echo "Vault Address: $VAULT_ADDR"
+cast send $TOKEN_ADDR "buyTokens()" --value 1ether --private-key $PRIVKEY --rpc-url $RPC_URL –legacy
+cast send $TOKEN_ADDR "approve(address,uint256)" $VAULT_ADDR 1 --private-key $PRIVKEY --rpc-url $RPC_URL –legacy
+cast send $VAULT_ADDR "deposit(uint256)" 1 --private-key $PRIVKEY --rpc-url $RPC_URL –legacy
+TOKEN_TO_DONATE=$((1000000000000000000 - 1))
+cast send $TOKEN_ADDR "transfer(address,uint256)" $VAULT_ADDR $TOKEN_TO_DONATE --private-key $PRIVKEY --rpc-url $RPC_URL –legacy
+```
+Sesudah script dijalankan, kembali ke link yang ada di deskripsi dan click button  
+flag untuk mendapatkan flag
+
+**Chall: Update Required (Forensic)**
+
+![screenshot](/blog/ctf-compfest17-ui/img-08.png)
+
+Skenario:
+
+Pertama-tama saya membuka file update\_required.ad1 di FTK Imager dan mencari password untuk mendapatkan seed passphrase, yang dimana nanti kita harus mendecrypt vaultnya agar bisa mendapatkan seed passphrasenya, referensi saya dari [https://medium.com/@0xVrka/unlocking-the-vault-disk-image-forensic-for-metamask-passphrase-recovery-via-master-passwords-8c44fcfd04ee](https://medium.com/@0xVrka/unlocking-the-vault-disk-image-forensic-for-metamask-passphrase-recovery-via-master-passwords-8c44fcfd04ee). Lalu saya pergi ke C::\\AppData\\Local\\Google\\Chrome\\User Data\\Default dan disana saya mendapatkan file History
+
+![screenshot](/blog/ctf-compfest17-ui/img-09.png)
+
+File History saya buka menggunakan aplikasi DB Browser for SQLite, lalu saya membuka table urls
+
+![screenshot](/blog/ctf-compfest17-ui/img-10.png)
+
+Disana terdapat history dari website cyberchef yang dimana terdapat base64, lalu saya mendecode base64 tersebut dan mendapatkan passwordnya
+
+![screenshot](/blog/ctf-compfest17-ui/img-11.png)
+
+Lalu selanjutnya saya mencari file vault dari ekstensi chrome, saya pergi ke C::\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Local Extension Settings, disana ada 2 folder dan disana terdapat banyak file .log hingga akhirnya saya mendapatkan isi yang sesuai yaitu file 001424.log
+
+![screenshot](/blog/ctf-compfest17-ui/img-12.png)
+
+Saya export file tersebut dan saya membuka [https://metamask.github.io/vault-decryptor/](https://metamask.github.io/vault-decryptor/) untuk mendapatkan seed passphrase, saya pilih file yang telah kita export dan masukkan sandinya dan mendapatkan seed passphrasenya
+
+![screenshot](/blog/ctf-compfest17-ui/img-13.png)
+
+seed passphrasenya adalah detect above congress nerve weasel pottery arctic sustain vendor stick excuse unable
+
+Lalu saya menganalisis file chall.pcap di wireshark menunjukkan proses pengunduhan antivirus.exe, tapi tidak ditemukan pencurian data via POST request. Malahan sebaliknya, ditemukan lalu lintas yang mengidikasikan malware tersebut menginstall sebuah ekstensi chrome berbahaya. File ini memberikan konteks cerita
+
+![screenshot](/blog/ctf-compfest17-ui/img-14.png)
+
+Lalu saya membuka aplikasi ChromeCacheView lalu pergi ke D:\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache\\Cache\_Data dan mendapatkan secret.pdf
+
+![screenshot](/blog/ctf-compfest17-ui/img-15.png)
+
+Awalnya saya iseng saja, saya hanya mengira kalau file pdf mungkin saja masih berada di cache dan itu benar
+
+Lalu selanjutnya saya membuka file tersebut dan memasukkan kata sandi detect\_above\_congress\_nerve\_weasel\_pottery\_arctic\_sustain\_vendor\_stick\_excuse\_unable, karena sesuai deskripsi soal yang harus menggunakan underscore
+
+Sayapun berhasil membuka file pdfnya dan jika kita scroll ke bawah kita akan mendapatkan flagnya
+
+![screenshot](/blog/ctf-compfest17-ui/img-16.png)
+
+![screenshot](/blog/ctf-compfest17-ui/img-17.png)
+
+**Chall: Mr & Mrs Smith (Forensic)**
+
+![screenshot](/blog/ctf-compfest17-ui/img-18.png)
+
+Skenario:
+
+Karena jumlah aplikasi sangat banyak, memeriksa satu-satu tidak akan efesien, jadi langkah pertama saya mencoba mengakses folder com.android.chrome karena aktivitas browsing adalah salah satu yang umum
+
+![screenshot](/blog/ctf-compfest17-ui/img-19.png)
+
+Saya memerika folder app\_chrome, databases, dan files tapi hasilnya tidak mendapatkan apa-apa
+
+![screenshot](/blog/ctf-compfest17-ui/img-20.png)
+
+Karena tidak mendapatkan apa-apa, sayapun memutuskan untuk memeriksa aplikasi yang umum digunakan lainnya untuk menyimpan informasi personal, yaitu kalender dan pesan
+
+Pertama saya fokus ke folder com.android.providers.calendar
+
+![screenshot](/blog/ctf-compfest17-ui/img-21.png)
+
+Didalamnya terdapat folder databases dan saat saya buka terdapat calendar.db
+
+![screenshot](/blog/ctf-compfest17-ui/img-22.png)
+
+Dan didalam database calendar.db terdapat table Events dan fokus saya terpusatkan tentang Anniversarry karena judul challnya adalah Mr & Mrs Smith yang merupakan sebuah pasangan dan deskripsi menunjukkan kunci untuk mendapatkan flag
+
+![screenshot](/blog/ctf-compfest17-ui/img-23.png)
+
+Selanjutnya saya fokus ke folder com.google.android.apps.messaging
+
+![screenshot](/blog/ctf-compfest17-ui/img-24.png)
+
+Didalam folder tersebut terdapat folder databases dan isi dari folder databases terdapat file bugle\_db.db karena itu adalah nama  file database utama untuk aplikasi google messages
+
+![screenshot](/blog/ctf-compfest17-ui/img-25.png)
+
+Didalam bugle\_db.db terdapat table message\_text, disana terdapat pesan lengkap, kurang lebih isi pesannya seperti ini  
+Person A: I uploaded everything to our secure drive  
+Person B: Which one? We have multiple backup locations  
+Person A: We upload our work here:
+
+[https://drive.google.com/drive/folders/1wfF\_RRAp\_dyzDzHeNJhe4CvZNs9qbwUK?usp=sharing](https://drive.google.com/drive/folders/1wfF_RRAp_dyzDzHeNJhe4CvZNs9qbwUK?usp=sharing)
+
+![screenshot](/blog/ctf-compfest17-ui/img-26.png)
+
+Disana saya mendapatkan link google drive yang dimana jika dibuka kita mendapatkan file classified.pdf.gpg
+
+![screenshot](/blog/ctf-compfest17-ui/img-27.png)
+
+Pesan selanjutnya berisi format password
+
+![screenshot](/blog/ctf-compfest17-ui/img-28.png)
+
+Dari pesan tersebut kita mendapatkan file classified.pdf.gpg dan format password DDMMYYYY-locationname
+
+Saya kembali lagi ke calendar.db di table Events dibagian Anniversary terdapat dtstart yang merupakan tanggal-waktu
+
+![screenshot](/blog/ctf-compfest17-ui/img-29.png)
+
+Sayapun menconvert dan mendapatkan tanggal 03032020, disini kita sudah mendapatkan DDMMYYYY
+
+![screenshot](/blog/ctf-compfest17-ui/img-30.png)
+
+Langkah selanjutnya adalah mencari lokasi, karena di deskripsi Anniversary terdapat pesan We started dating, and took a picture to commemorate it, disana ia menyebutkan took a picture, maka kemungkinan besar lokasi tersebut terdapat di dalam metadata foto tersebut
+
+Lalu saya memeriksa folder media
+
+![screenshot](/blog/ctf-compfest17-ui/img-31.png)
+
+Dan saya menemukan foto yang sesuai dengan tanggalnya yaitu 03032020
+
+![screenshot](/blog/ctf-compfest17-ui/img-32.png)
+
+Dan jika saya buka, ini merupakan sebuah foto bersama, bisa dipastikan ini adalah foto saat anniversary mereka
+
+![screenshot](/blog/ctf-compfest17-ui/img-33.png)
+
+Saat saya liat metadatanya, terdapat koordinat dan menunjukan ke lokasi central park yang artinya lokasinya adalah centralpark
+
+![screenshot](/blog/ctf-compfest17-ui/img-34.png)
+
+Disini bisa dipastikan bahwa passwordnya adalah 03032020-centralpark
+
+Lalu saya membuka file pdf menggunakan kloepatra dan mendapatkan file pdfnya
+
+Ini seperti file pdf pada umumnya tapi jika kita scroll ke bawah kita akan mendapatkan flagnya
+
+![screenshot](/blog/ctf-compfest17-ui/img-35.png)
+
+![screenshot](/blog/ctf-compfest17-ui/img-36.png)

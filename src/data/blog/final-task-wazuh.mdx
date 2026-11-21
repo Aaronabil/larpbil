@@ -1,0 +1,179 @@
+---
+title: "Final Task - Wazuh"
+desc: "Final task Bootcamp Cyberdefense ID-Networkers: investigasi Wazuh SIEM, network dump, dan memory dump."
+image: "/blog/final-task-wazuh/img-01.png"
+tags: ["ctf", "writeup", "siem"]
+date: "2026-03-16"
+isPublished: true
+---
+
+# Final Task - Wazuh
+
+### Pendahuluan
+
+Ini adalah final task atau task terakhir dari bootcamp cyberdefense ID-Networkers, disini saya mendapatkan file zip bernama tugasCapstone.zip yang jika diextract berisi folder bernama cyberwarfarelabs yang didalam folder itu terdapat 3 folder, yaitu folder wazuh, network dump dan memory dump. Didalam folder wazuh terdapat folder Cyber Defense CWL yang didalamnya terdapat virtualbox wazuh.
+
+![screenshot](/blog/final-task-wazuh/img-01.png)
+
+Didalam folder network dump terdapat 2 file, yaitu file external.pcapng dan suspected.pcap.
+
+![screenshot](/blog/final-task-wazuh/img-02.png)
+
+Dan terakhir didalam folder memory dump terdapat 1 file saja, yaitu file suspected.raw.
+
+![screenshot](/blog/final-task-wazuh/img-03.png)
+
+Pertama saya harus setup virtualbox untuk menjalankan wazuhnya. Disini saya tidak akan menjelaskan cara setupnya.
+
+### Question 1
+
+Periksa dan identifikasi **nama agent** yang terhubung dengan **SIEM yang dideploy secara lokal**.
+
+Answer: metaspoitable
+
+Explain: Pertama-tama saya login dulu diwazuhnya menggunakan admin:admin lalu menekan dropdown wazuh, disana akan ada banyak menu, lalu pilih menu agents dan disana terdapat agent bernama metasploitable
+
+![screenshot](/blog/final-task-wazuh/img-04.png)
+
+### Question 2
+
+Identifikasi **nama web server** yang digunakan atau terhubung dengan **SIEM lokal**.
+
+Answer: Apache
+
+Explain: Pertama saya menekan agentnya lalu memilih menu Security events, disini saya setup tanggalnya dulu, saya mulai dari 1 januari 2024 sampai sekarang (now), kenapa mulai dari 1 januari 2024? karena registration date agent metaspoitable adalah 24 february 2024.
+
+![screenshot](/blog/final-task-wazuh/img-05.png)
+
+Lalu saya ke menu Events dan saya mencari avaible fields bernama location dan disana terlihat bahwa nama webservernya adalah apache.
+
+![screenshot](/blog/final-task-wazuh/img-06.png)
+
+Disini juga saya memfilter field location dengan /var/log/apache2/access.log dan mendapatkan 7 hits
+
+![screenshot](/blog/final-task-wazuh/img-07.png)
+
+### Question 3
+
+Sebutkan **nama index di Wazuh** yang digunakan untuk menyimpan **semua log mentah (RAW logs)** yang dikumpulkan oleh SIEM lokal.
+
+Answer: wazuh-archives-\*
+
+Explain: Pertama-tama saya ke menu Management > Stock Management
+
+![screenshot](/blog/final-task-wazuh/img-08.png)
+
+Lalu dibagian ini saya ke Index Patern dan disana terdapat 4 index dan index wazuh-archives-\* bertugas untuk menyimpan semua lalu lintas log mentah (raw logs) tanpa terkecuali, entah itu serangan berbahaya atau sekadar log sistem normal sehari-hari, sedangkan wazuh-alert-\* bertugas untuk menyimpan log yang sudah melewati ruleset dan dianggap sebagai peringatan keamanan
+
+![screenshot](/blog/final-task-wazuh/img-09.png)
+
+### Question 4
+
+Periksa **jumlah total aktivitas SQL Injection (SQLI)** yang terdeteksi selama menyelesaikan latihan **SQL-Injection Activity Detected**.
+
+Answer: 1 atau 4
+
+Explain: Disini saya kembali ke menu Security events > Events dan berhubung hitsnya hanya 56 jadi saya find saja menggunakan ctrl+f.
+
+![screenshot](/blog/final-task-wazuh/img-10.png)
+
+Dan disini saya mendapatkan activitas sql injection di rule id 31164 sebanyak 1 saja, tapi disini saya menganggap rule id 31106 itu juga merupakan sebuah aktivitas sql injection karena disana mereka melakukan sql injection dan sukses juga, jadi saya menganggap aktivitas sql injection sebanyak 4
+
+![screenshot](/blog/final-task-wazuh/img-11.png)
+
+![screenshot](/blog/final-task-wazuh/img-12.png)
+
+Ketika cek detail dari activitas sql injection ternyata attackers melakukan sql injection dengan [http://192.168.117.190/prod/vulnerabilities/sqli/?id=](http://192.168.117.190/prod/vulnerabilities/sqli/?id=)' or 1=1#&Submit=Submit yang artinya ' OR 1=1#
+
+![screenshot](/blog/final-task-wazuh/img-13.png)
+
+### Question 5
+
+Identifikasi **HTTP status code** yang terkait dengan aktivitas **Cross-Site Scripting (XSS)**.
+
+Answer: 200 dan 404
+
+Explain: Karena ini identifikasi http status code, jadi saya memfilter field data id dengan status codenya 200 dan menemukan activitas XSS yan success dan ada juga activitas XSS yang error
+
+![screenshot](/blog/final-task-wazuh/img-14.png)
+
+Pencarian log dengan parameter XSS menemukan eksekusi *payload* terenkode URL yang memuat \<script>alert(document.cookie);\</script>. Dari ekstraksi field full\_log web server (Apache), serangan injeksi skrip tersebut dieksekusi dengan sukses yang ditandai oleh HTTP status code 200
+
+![screenshot](/blog/final-task-wazuh/img-15.png)
+
+![screenshot](/blog/final-task-wazuh/img-16.png)
+
+![screenshot](/blog/final-task-wazuh/img-17.png)
+
+### Question 6
+
+Identifikasi **nama file** yang terkait dengan aktivitas **File Inclusion**.
+
+Answer: passwd
+
+Explain: Disini saya pergi ke menu Discover dan memilih wazuh-archives-\* karena di wazuh-alert-\* saya tidak menemukan aktivitas file inclusion. Kenapa memilih wazuh-archives-\*? seperti yang saya jelaskan sebelumnya, wazuh-archives-\* bertugas untuk menyimpan semua lalu lintas log mentah (raw logs) tanpa terkecuali, entah itu serangan berbahaya atau sekadar log sistem normal sehari-hari yang artinya wauh-alert-\* ini tidak cukup ketat rulesetnya dan disini terdapat 9000+ hits
+
+![screenshot](/blog/final-task-wazuh/img-18.png)
+
+Lalu disini saya mencari dengan keyword file dan mendapatkan 14hits
+
+![screenshot](/blog/final-task-wazuh/img-19.png)
+
+dan ternyata disini saya mendapatkan aktivitas file inclusionnya. Attackers   
+mengeksploitasi kerentanan parameter ?page= menggunakan teknik *Directory Traversal* untuk membaca file sistem Linux, dengan target utama /etc/passwd.
+
+![screenshot](/blog/final-task-wazuh/img-20.png)
+
+### Question 7
+
+Tentukan **port** yang terkait dengan **komunikasi jaringan mencurigakan** pada latihan **Remote File Inclusion Activity Detected**.
+
+Answer: 9001
+
+Explain: Awalnya saya mencari portnya di wazuh tapi karena tidak ada saya membuka file pcap di wireshark, saya membuka dan mengalisis follow tcp stream pada file suspected.pcap mengungkapkan adanya komunikasi reverse shell setelah exploitasi. Server korban (192.168.117.190) di instruksikan untuk membuka koneksi luar (outbond) menuju IP attacker pada destination port 9001. Didalam transmisi ini, attacker terdeteksi menjalankan perintah terminal seperti whoami dan ip a
+
+![screenshot](/blog/final-task-wazuh/img-21.png)
+
+Ini hasil dari follow tcp rev.php
+
+![screenshot](/blog/final-task-wazuh/img-22.png)
+
+![screenshot](/blog/final-task-wazuh/img-23.png)
+
+![screenshot](/blog/final-task-wazuh/img-24.png)
+
+### Question 8
+
+Identifikasi **source port (src port)** yang terhubung dengan **destination port 4444** pada file **external.pcapng**.
+
+Answer: 49816
+
+Explain: Disini saya langsung melakukan filtering dengan query tcp.port == 4444 pada file external.pcapng memunculkan lalu lintas komunikasi TCP. Terdapat paket inisiasi \[SYN\] dari ip korban menuju ip attackers(182.168.132.242) yang bertindak sebagai listener di port 4444. Paket tersebut dikirim melalui source port dinamis 49816
+
+![screenshot](/blog/final-task-wazuh/img-25.png)
+
+### Question 9
+
+Tentukan **PID (Process ID)** yang terkait dengan **shell.exe** pada file **memory dump suspected.raw**.
+
+Answer: 7396
+
+Explain: Pertama-tama saya medownload aplikasi Volatitily, tepatnya disini [https://github.com/volatilityfoundation/volatility3/releases](https://github.com/volatilityfoundation/volatility3/releases) dan saya download file zipnya setelah diextract saya pindahkan vol.exenya ke dalam folder suspected agar gampang eksekusinya, lalu saya menjalankan perintah
+
+```bash
+.\vol.exe -f suspected.raw windows.pslist | findstr shell.exe
+```
+
+![screenshot](/blog/final-task-wazuh/img-26.png)
+
+dan saya mendapatkan PID dari shell.exe
+
+### Question 10
+
+Tentukan **URL** yang terkait dengan aktivitas **Local File Inclusion (LFI)** yang terdeteksi pada **SIEM lokal**
+
+Answer: /prod/vulnerabilities/fi/?page=file../../../../../../etc/passwd
+
+Explain: Berdasarkan log yang sama dengan temuan pada question 6, field data url pada wazuh mengextract secara otomatis path lengkap yang digunakan attackers saat melakukan directory traversal
+
+![screenshot](/blog/final-task-wazuh/img-27.png)
