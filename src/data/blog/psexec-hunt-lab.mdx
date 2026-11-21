@@ -1,0 +1,110 @@
+---
+title: "PsExec Hunt Lab"
+desc: "Investigasi PCAP lateral movement PsExec: melacak IP attacker, hostname pivot, akun yang dikompromikan, dan share yang dipakai."
+image: "/blog/psexec-hunt-lab/img-01.png"
+tags: ["ctf", "writeup", "forensic"]
+date: "2026-03-06"
+isPublished: true
+---
+
+# PsExec Hunt Lab
+
+### Skenario
+
+An alert from the Intrusion Detection System (IDS) flagged suspicious lateral movement activity involving PsExec. This indicates potential unauthorized access and movement across the network. As a SOC Analyst, your task is to investigate the provided PCAP file to trace the attacker’s activities. Identify their entry point, the machines targeted, the extent of the breach, and any critical indicators that reveal their tactics and objectives within the compromised environment.
+
+### Pendahuluan
+
+Disini saya mendapatkan file **143-psexec-hunt.zip** dan untuk mengextract memerlukan password, yang dimana passwordnya adalah [cyberdefenders.org](http://cyberdefenders.org/), password ini didapatkan melalaui webnya dan isi dari file zip tersebut adalah sebuah file **psexec-hunt.pcapng**
+
+### Question 1
+
+To effectively trace the attacker's activities within our network, can you identify the IP address of the machine from which the attacker initially gained access?
+
+Answer: 10.0.0.130
+
+Explain: Pertama-tama saya membuka filenya di wireshark dikarenakan formatnya pcapng
+
+![screenshot](/blog/psexec-hunt-lab/img-01.png)
+
+Disini terdapat banyak ip dan setelah saya menganalisa, alamat ip mesin yang menjadi titik awal serangan dan digunakan attackers untuk melakukan pivot pertama kali adalah 10.0.0.130. Terbukti dengan aktivitas SMB2, saya melihat menu Statistic→Conversations→IPv4, saya melihat bahwa ip 10.0.0.130 memiliki volume yang sangat tinggi saat berkomunasi dengan host lain melalui port 445
+
+![screenshot](/blog/psexec-hunt-lab/img-02.png)
+
+Lalu bukti lain adalah alamat ip ini bertindah sebagai pengirim paket `Neogtiate Protocol Request` , seperti yang terlihat pada packet nomor 126 dan 128
+
+![screenshot](/blog/psexec-hunt-lab/img-03.png)
+
+### Question 2
+
+To fully understand the extent of the breach, can you determine the machine's hostname to which the attacker first pivoted?
+
+Anwer: SALES-PC
+
+Explain: Saya disini langsung menggunakan filter `ntlmssp.messagetype == 2` , karena biasanya mesin windows akan membocorkan namanya saat proses autentikasi
+
+![screenshot](/blog/psexec-hunt-lab/img-04.png)
+
+Selanjutnya saya membuka packet paling atas dan melihat paket details, SMB2→Session Setup Response→Security Blob→GSS-API→Simple Protected Negotiation→negTokenResp→NTLM Secure Service Provider→Target Name dan saya menemukan bahwa hostnamenya adalah SALES-PC
+
+![screenshot](/blog/psexec-hunt-lab/img-05.png)
+
+### Question 3
+
+Knowing the username of the account the attacker used for authentication will give us insights into the extent of the breach. What is the username utilized by the attacker for authentication?
+
+Answer: ssales
+
+Explain: Username yang digunakan attackers untuk authentication terdapat di packet nomor 132, disana jelas usernamenya apa
+
+![screenshot](/blog/psexec-hunt-lab/img-06.png)
+
+akun ini kemungkinan besar adalah akun yang telah dikompromikan oleh attacker untuk mendapatkan akses ke mesin target melalui lateral movement
+
+### Question 4
+
+After figuring out how the attacker moved within our network, we need to know what they did on the target machine. What's the name of the service executable the attacker set up on the target?
+
+Answer: PSEXESVC
+
+Explain: nama executable yang disiapkan pada target bisa terlihat dengan jelas juga di packet nomor 144, disana terdapat create request file PSEXESVC
+
+![screenshot](/blog/psexec-hunt-lab/img-07.png)
+
+Ini adalah file yang digunakan attacker untuk menjalankan command atau program secara remote/jarak jauh dengan hak akses sistem (SYSTEM privilege) setelah berhasil melakukan authentication
+
+### Question 5
+
+We need to know how the attacker installed the service on the compromised machine to understand the attacker's lateral movement tactics. This can help identify other affected systems. Which network share was used by PsExec to install the service on the target machine?
+
+Answer: ADMIN\$
+
+Explain: Ini juga terlihat jelas pada packet nomor 138 dengan network share ADMIN\$
+
+![screenshot](/blog/psexec-hunt-lab/img-08.png)
+
+ADMIN\$ adalah administrative share yang secara default mengarah ke directory sistem windows (biasanya C:/Windows). PsExec memerlukan akses ke share ini untuk menyalin file service executable (seperti PSEXESVC.exe) ke mesin target sebelumnya menjalankannya sebagai service. Keberhasilan koneksi ADMIN\$ menunjukkan bahwa akun yang digunakan oleh attacker memiliki hak akses administrator pada mesin target
+
+### Question 6
+
+We must identify the network share used to communicate between the two machines. Which network share did PsExec use for communication?
+
+Answer: IPC\$
+
+Explain: Ini juga dapat terlihat jelas pada packet nomor 134 yang dimana share network yang digunakan PsExec untuk berkomunikasi adalah IPC\$
+
+![screenshot](/blog/psexec-hunt-lab/img-09.png)
+
+Packet nomor 134 menunjukkan Tree Connect Request Tree: \\\\10.0.0.0133\\IPC\$. Ini adalah langkah awal PsExec untuk membangun saluran komunikasi jarak jauh menggunakan named pipe yang fungsinya adalah setelah layanan terinstall (melalui ADMIN\$), PsExec berkomunikasi dengan service tersebut melalui pipe yang berada di dalam share IPC\$ ini untuk mengirim perintah dan menerima output secara realtime. Jadi, sementara ADMIN\$ digunakan untuk menaruh file programnya, IPC\$ adalah jalur yang digunakan untuk berkomunikasi dan mengendalikan mesin target tersebut.
+
+### Question 7
+
+Now that we have a clearer picture of the attacker's activities on the compromised machine, it's important to identify any further lateral movement. What is the hostname of the second machine the attacker targeted to pivot within our network?
+
+Answer: MARKETING-PC
+
+Explain: Disini juga terlihat jelas dengan melihat aktivitas protocol LLMNR dan BROWSER, itu terlihat pada packet nomor 19 dan 25 bahwa hostname pada mesin kedua adalah MARKETING-PC
+
+![screenshot](/blog/psexec-hunt-lab/img-10.png)
+
+Packet 19 terlihat bahwa ada standart query untuk mencari nama MARKETING-PC. LLMNR digunakan oleh sistem windows untuk mencari nama komputer di jaringan lokal jika DNS tidak merespons dan packet 25 terdapat Host Announcement yang secara langsung memberitahu keberadaan MARKETING-PC

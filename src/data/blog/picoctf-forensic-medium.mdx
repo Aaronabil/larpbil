@@ -1,0 +1,57 @@
+---
+title: "Write-Up picoCTF Forensic - Medium"
+desc: "Write-up picoCTF Forensic Medium: membedah Windows Event Logs (EVTX) untuk merangkai tiga potongan flag."
+image: "/blog/picoctf-forensic-medium/img-01.png"
+tags: ["ctf", "writeup", "forensic"]
+date: "2026-02-14"
+isPublished: true
+---
+
+# Write-Up picoCTF Forensic - Medium
+
+### **Event-Viewing**
+
+![screenshot](/blog/picoctf-forensic-medium/img-01.png)
+
+Solution: Disini saya mendapatkan file `Windows_Logs.evtx`, untuk membuka file tersebut saya menggunakan `Event Viewer` dan ini kali pertama saya membuka dan menggunakan Event Viewer.
+
+![screenshot](/blog/picoctf-forensic-medium/img-02.png)
+
+Disini saya perlu memfilter atau mencari event id tertentu dan memeriksa bagian command line atau event data di dalam log ini dengan menggunakan filter current log lalu masukkan event idnya dibagian \<All Event IDs>.
+
+![screenshot](/blog/picoctf-forensic-medium/img-03.png)
+
+Pertama saya mencari bukti terlebih dahulu tentang instalasi software, karena dibagian 1 disana tertera bahwa *“**They installed software using an installer they downloaded online”*. Saya mencari dengan event id `4688` karena ini adalah a new process has been created dan ternyata saya tidak menemukan apa-apa disana, hanya ada informasi saja
+
+![screenshot](/blog/picoctf-forensic-medium/img-04.png)
+
+Untuk langkah selanjutnya saya membuka log system untuk mencari jejak shutdown karena petunjuk menyebutkan *“their computer shuts down instantly”. *Bukti sistem yang dimatikan tidak tersimpan di log security, melainkan di log system. Lalu saya mencari event id `1074` (System shutdown) dan ternyata saya menemukan sebuah comment yang berisi base64.
+
+![screenshot](/blog/picoctf-forensic-medium/img-05.png)
+
+Yang ketika didecode itu adalah potongan dari sebuah flag
+
+![screenshot](/blog/picoctf-forensic-medium/img-06.png)
+
+Selanjutnya saya membuka log application untuk mencari jejak instalasi karena petunjuk menyebutkan *“They installed software using an installer” .** *Log instalasi application biasanya akan masuk ke log application. Saya mencari event id `1033` (ini adalah ID untuk instalasi windows installer/MSI yang berhasil).  Disini berisi informasi yang lumayan banyak saya cek satu dan ternyata information paling bawah terdapat base64
+
+![screenshot](/blog/picoctf-forensic-medium/img-07.png)
+
+Yang jika di decode saya mendapatkan potongan ke 2 dari flag
+
+![screenshot](/blog/picoctf-forensic-medium/img-08.png)
+
+Selanjutnya saya tinggal mencari bagian ke keduanya saja, awalnya saya mencari event id `4698 `namun saya hanya mendapatkan informasi scheduled task yang normal dari microsoft visual studio   
+(terlihat dari task name `\Microsoft\VisualStudio\Updates\BackgroundDownload` dan file yang dieksekusi adalah `BackgroundDownload.exe`).
+
+![screenshot](/blog/picoctf-forensic-medium/img-09.png)
+
+Lalu saya mencari event id` 4657`, ini adalah ID log yang akan mencatat setiap kali ada modifikasi atau perubahan pada Registry value di dalam sistem dan sama halnya dengan event id `1033`, disini berisi information yang lumayan banyak dan information paling bawah terdapat base64
+
+![screenshot](/blog/picoctf-forensic-medium/img-10.png)
+
+Yang jika didecode saya mendapakan potongan flag yang ketiga
+
+![screenshot](/blog/picoctf-forensic-medium/img-11.png)
+
+Disini saya telah berhasil mendapatkan ketiga potongan flag. Bagian pertama (Log 1033), bagian kedua (Log 4657) dan bagian ketiga (Log 1074) yang jika digabungkan adalah `picoCTF{Ev3nt_vi3wv3r_1s_a_pr3tty_us3ful_t00l_81ba3fe9}`
