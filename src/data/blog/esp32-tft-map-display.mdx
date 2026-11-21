@@ -1,0 +1,34 @@
+---
+title: "Showing a Phone Map on an ESP32 + TFT Display"
+desc: "How a small ESP32 + TFT display shows a phone map over Wi-Fi — and why a weak Wi-Fi link, not the timeout, was the bug."
+image: "/blog/bil-blog.svg"
+tags: ["esp32", "iot", "embedded"]
+date: "2026-11-21"
+isPublished: true
+---
+
+# Showing a Phone Map on an ESP32 + TFT Display
+
+My IoT project is a companion display for ojol drivers: an ESP32 with a 2.4-inch TFT touchscreen on the handlebar, showing the map and trip info from the driver's phone — so the driver never has to hold the phone while riding.
+
+## How the Link Works
+
+The link is split by size, and that split matters more than anything else in the design:
+
+- **BLE carries small data and control**: connection status, phone name and battery, notification text, commands, and the hotspot SSID and password.
+- **Hotspot Wi-Fi carries the large data**: map images as JPEG frames over TCP, plus internet time.
+
+The phone app captures the map and sends JPEG frames to the ESP32; trip info (remaining distance, speed, ETA) updates every 2 seconds over BLE. The phone's name and battery appear on the ESP32 home screen the moment the phone connects — no typing, just the link doing its job.
+
+## The Bug That Wasn't a Timeout
+
+The map stream was unstable: frames arrived incomplete and the client was disconnected. The obvious fix was to raise the timeout — the firmware timeout had already gone from 200 ms to 1000 ms, and the problem persisted.
+
+Instrumented logs told a different story: the Wi-Fi link itself was weakening. RSSI faded from -60 to -73 dBm while a 16 KB frame took over 10 seconds to arrive and still came back incomplete. No timeout value fixes a link that cannot carry the frame in time.
+
+The real fix is a better link — the ESP32 closer to the phone, or a hotspot — plus lower JPEG quality (40) and a longer interval (2 seconds). Not a bigger timeout.
+
+## Two Things That Trip People Up
+
+- **"Connected" on the LCD proves only the link.** A Bluetooth connection belongs to one app at a time, so a connection made in a test app is not a connection in the real app. The LCD saying "Connected and synced" does not mean any data arrived.
+- **Measure before fixing.** RSSI and frame timings beat guessing. The moment I logged the numbers, the timeout theory died and the Wi-Fi theory took its place.

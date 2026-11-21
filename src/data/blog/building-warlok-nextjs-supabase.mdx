@@ -1,0 +1,34 @@
+---
+title: "Building Warlok: A Fandom Community Site with Next.js and Supabase"
+desc: "How I built Warlok — a fandom community site for novels, fanart, and comics — with the Next.js App Router, Supabase Auth, RLS, and a novel reader."
+image: "/blog/bil-blog.svg"
+tags: ["nextjs", "supabase", "web development"]
+date: "2026-11-21"
+isPublished: true
+---
+
+# Building Warlok: A Fandom Community Site with Next.js and Supabase
+
+Warlok is a fandom community website: novels, fanart, and comics in one place. I built it with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, and Supabase, and I built it in phases — with a check after each one — instead of one big untested build.
+
+## The Phases
+
+- **Phase 1 — Setup and theme**: Next.js 16.4.6, React 19, Tailwind 4, dark purple on pure black, a purple witch-hat logo, bilingual UI (Indonesian default, English second).
+- **Phase 2 — Auth and profiles**: Supabase Auth with email and Google login, protected dashboard and upload pages, profile editing.
+- **Phase 3 — Database and RLS**: One migration with 16 tables, 52 RLS policies, a trigger that creates a profile row for every new user, and Storage buckets (5 MB max, JPG/PNG/WebP).
+- **Phase 4 — Novels**: Browse, search, filter, and sort; a Tiptap rich-text editor and reader; reader-mode font and background settings; drafts that only publish when at least one chapter is published; chapter reordering and cover upload.
+
+Fanart, comics, and the activity feed (likes, comments) are the next phases. I am not starting Phase 5 until the novel flow has been tried end to end with a real first novel.
+
+## What RLS Actually Taught Me
+
+Auth is only half the job. Supabase Auth proves who you are; Row Level Security is what actually stops one user from reading or editing another user's drafts. Writing 52 policies forced me to decide, table by table, who can do what — and testing them with a second account caught mistakes no amount of reading the docs would have.
+
+## Two Bugs Worth Remembering
+
+- **Spaced display names break profile links.** A Google display name with spaces broke the top-right profile menu. Usernames are now canonicalised in one shared helper (`lib/profile.ts`), and the profile lives at `/profile/me`.
+- **Built-in SMTP is not for the public.** Supabase's free built-in SMTP allows 2 emails per hour per project, and only to organisation members. Before opening sign-ups to the public, Warlok needs custom SMTP.
+
+## What I Would Do Differently
+
+Nothing about the phasing — that worked. But I would write the RLS tests earlier: policies are easy to write and easy to get subtly wrong, and the only way to know is to log in as a different user and try to break them.

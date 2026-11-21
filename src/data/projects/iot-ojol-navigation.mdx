@@ -1,0 +1,79 @@
+---
+title: "IoT Ojol Navigation - ESP32 + TFT Companion Display"
+shortTitle: "IoT Ojol Navigation"
+description: "ESP32 + 2.4-inch TFT companion display for ojol drivers — map and trip info from the phone."
+about: "ESP32 + 2.4-inch TFT companion display for ojol drivers — map and trip info from the phone"
+image: "/projects/iot-ojol-navigation.svg"
+stack: ["ESP32", "Arduino", "Flutter", "BLE"]
+github: "https://github.com/MujiAko/IoT-Pemindai-Navigasi"
+live: ""
+timeline: "Oct 2026 - Present"
+role: "Full-Stack Developer & Embedded"
+team: "Solo + collaborator (phone app)"
+status: "Building"
+featured: true
+challenges: ["Map images arriving incomplete over Wi-Fi", "Keeping BLE connected while Wi-Fi streams images", "Fitting the display, touch, and radios on one ESP32"]
+learnings: ["BLE GATT services and characteristics", "JPEG streaming over TCP", "Debugging with RSSI, not guesses"]
+isPublished: true
+tags: ["Working", "Building"]
+date: "2026-10-08"
+
+---
+
+# IoT Ojol Navigation: A Companion Display for Ojol Drivers
+
+## Overview
+
+An ESP32 with a 2.4-inch TFT touchscreen that sits on a motorbike handlebar and shows the map and trip info from the driver's phone — so the driver does not have to hold the phone while riding. The phone app (Flutter) sends the map and trip data; the ESP32 displays it.
+
+## What It Does
+
+- **Shows the map**: The phone captures the map and sends it as JPEG frames over Wi-Fi to the ESP32.
+- **Shows trip info**: Remaining distance, speed, and ETA update every 2 seconds over BLE.
+- **Shows the phone**: The phone's name and battery percentage appear on the ESP32 home screen the moment the phone connects.
+- **Shows orders**: Ojol and food-delivery orders can pop up and navigate automatically via the phone's notification listener.
+
+## Why I Built This
+
+Holding a phone while riding is dangerous and impractical. A small dedicated display with the map, ETA, and orders — fed by the phone already in the driver's pocket — solves it with cheap, practical hardware: an ESP32 and a 2.4-inch TFT.
+
+## Tech Stack
+
+### Hardware
+
+- **ESP32 DevKit**: The main board, wired to the TFT with 14 jumper cables
+- **2.4-inch TFT (ILI9341, 240x320)**: Display with XPT2046 resistive touch
+- **Flutter app**: The companion phone app (map, BLE, notifications)
+
+### Protocols
+
+- **BLE GATT**: Small data and control — phone name, battery, notifications, commands, status
+- **Wi-Fi hotspot**: Large data — map JPEG frames and internet time
+
+## Building Experience
+
+### The Map Bug
+
+- The map stream was unstable: frames arrived incomplete and the client was disconnected. The instinct was to raise the timeout — but instrumented logs showed the real cause: the Wi-Fi link was weakening (RSSI fading from -60 to -73 dBm) while a 16 KB frame took over 10 seconds to arrive.
+- The fix is a better link (ESP32 closer to the phone, or a hotspot) plus lower JPEG quality and a longer interval — not a bigger timeout.
+
+### The Link Split
+
+- BLE carries small data and control; Wi-Fi carries the large map images. A Bluetooth connection belongs to one app at a time, so a connection made in a test app is not a connection in the real app — the LCD saying "Connected" proves only the link, not that any data arrived.
+
+## Impact & Results
+
+- **Working prototype**: Phone name and battery appear on connect, navigation data streams over BLE, and map frames render — with the Wi-Fi stability fix in progress.
+- **Casing planned**: A blackbox enclosure sized from the real TFT PCB measurements (77.18 x 42.72 mm), PETG recommended for motorcycle sun use.
+
+## Future Enhancements
+
+- **Stable map streaming**: Hotspot mode + JPEG quality 40 with a 2-second interval.
+- **Compact v2**: ESP32-C2 mini with a 3D-printed case.
+- **Auto-accept**: Not possible without an official API — orders will stay display-and-navigate only.
+
+## Key Learnings
+
+- **Measure before fixing**: RSSI and frame timings beat guessing at timeouts.
+- **Split the link by size**: Small data over BLE, big data over Wi-Fi.
+- **Real boards, real numbers**: The casing is designed from the actual PCB measurements, not assumptions.

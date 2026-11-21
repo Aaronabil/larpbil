@@ -1,0 +1,78 @@
+---
+title: "CyberShield - Cybersecurity Dashboard"
+shortTitle: "CyberShield"
+description: "A cybersecurity dashboard — firewall, traffic, and attack simulations."
+about: "A cybersecurity dashboard — firewall, traffic, and attack simulations"
+image: "/projects/cybershield.svg"
+stack: ["React", "TypeScript", "Tailwind CSS", "Recharts"]
+github: ""
+live: "https://cybershield-react-aaronabils-projects.vercel.app/"
+timeline: "Nov 2026"
+role: "Full-Stack Developer"
+team: "Solo"
+status: "Working"
+featured: true
+challenges: ["Live-looking charts without a real backend", "Making attack simulations readable, not scary", "Keeping the dashboard fast with lots of data"]
+learnings: ["Recharts for live dashboards", "shadcn/ui component patterns", "Deploying React on Vercel"]
+isPublished: true
+tags: ["Working", "Building"]
+date: "2026-11-06"
+
+---
+
+# CyberShield: A Cybersecurity Dashboard
+
+## Overview
+
+CyberShield is a cybersecurity dashboard with a firewall panel, live traffic charts, attack simulations, logs, and a blacklist. The current version is built with React, TypeScript, Tailwind CSS, and Recharts, and is deployed on Vercel.
+
+## What Users Can Do
+
+- **Watch the dashboard**: Traffic and threat charts update as simulated events flow in.
+- **Manage the firewall**: Toggle rules and see blocked traffic change.
+- **Run attack simulations**: Simulated attacks show up in the logs and charts so the response is visible.
+- **Check the blacklist**: Blocked IPs and their reasons in one list.
+
+## Why I Built This
+
+A security dashboard is a good way to learn real frontend patterns — live data, charts, tables, and state — while the topic itself (firewalls, attacks, logs) is genuinely interesting to build.
+
+## Tech Stack
+
+### Frontend
+
+- **React**: Vite + React 19 + TypeScript
+- **Tailwind CSS**: Utility-first styling with shadcn/ui components
+- **Recharts**: Live traffic and threat charts
+
+### Deployment
+
+- **Vercel**: Live deployment, verified with an HTTP 200 check
+
+## Building Experience
+
+### From PHP to React
+
+- The first version was HTML + Tailwind + PHP/MySQL. I rebuilt it in React with real shadcn/ui and Recharts because the React version is the one worth showing — the demo video and testing document are both from the React version on Vercel.
+
+### Problem-Solving
+
+- The dashboard has to look live without a real backend, so simulated data is generated on a timer and fed through the same components real data would use.
+- A 69-second silent demo video and an 8-page testing document (15/15 checks passing) were made from the live React deployment.
+
+## Impact & Results
+
+- **Live on Vercel**: The React deployment is up and verified.
+- **Tested**: 15/15 checks passing in the testing document.
+
+## Future Enhancements
+
+- **Real backend**: Replace simulated data with a real API and database.
+- **Auth**: Accounts and per-user dashboards.
+- **More simulations**: Phishing and brute-force scenarios.
+
+## Key Learnings
+
+- **Rebuilds are worth it**: The React version is cleaner and easier to demo than the PHP one.
+- **Demo from the real thing**: Record the video from the deployed app, not from a mockup.
+- **Testing documents matter**: Writing the checks down is what makes "it works" verifiable.

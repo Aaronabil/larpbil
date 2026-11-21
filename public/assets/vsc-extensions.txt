@@ -1,0 +1,7 @@
+bradlc.vscode-tailwindcss
+dsznajder.es7-react-js-snippets
+esbenp.prettier-vscode
+formulahendry.auto-rename-tag
+naumovs.color-highlight
+wix.vscode-import-cost
+PKief.material-icon-theme

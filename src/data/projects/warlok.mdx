@@ -1,0 +1,80 @@
+---
+title: "Warlok - Fandom Community Website"
+shortTitle: "Warlok"
+description: "A fandom community website — novels, fanart, and comics in one place."
+about: "A fandom community website — novels, fanart, and comics in one place"
+image: "/projects/warlok.svg"
+stack: ["Next.js", "TypeScript", "Tailwind CSS", "Supabase"]
+github: ""
+live: ""
+timeline: "Nov 2026 - Present"
+role: "Full-Stack Developer"
+team: "Solo"
+status: "Building"
+featured: true
+challenges: ["Designing a novel reader that feels good to read", "Row Level Security for user content", "Bilingual UI (Indonesian / English)"]
+learnings: ["Supabase Auth with Google OAuth", "RLS policies in Postgres", "Tiptap rich-text editing"]
+isPublished: true
+tags: ["Working", "Building"]
+date: "2026-11-14"
+
+---
+
+# Warlok: A Fandom Community Website
+
+## Overview
+
+Warlok is a fandom community website where people can read novels, share fanart, and publish comics. It is built with the Next.js App Router, TypeScript, Tailwind CSS, and Supabase, with a dark purple-on-black theme and a purple witch-hat logo.
+
+## What Users Can Do
+
+- **Read novels**: Browse novels, read chapters in a reader mode with adjustable font and background.
+- **Publish novels**: Write chapters with a rich-text editor, reorder them, and publish only when at least one chapter is published.
+- **Share fanart and comics**: Upload artwork with a cover image (JPG/PNG/WebP, max 5 MB).
+- **Accounts**: Sign up with email or Google, edit your profile, and keep drafts private until you publish.
+
+## Why I Built This
+
+I wanted one place for a fandom community instead of scattered chats and drives — a site where reading and creating live side by side, with real accounts and real permissions instead of a static page.
+
+## Tech Stack
+
+### Frontend
+
+- **Next.js**: App Router, React 19, TypeScript
+- **Tailwind CSS**: Utility-first styling, shadcn/ui components
+- **Tiptap**: Rich-text editor for novel chapters
+
+### Backend
+
+- **Supabase**: Auth (email + Google), Postgres database, Storage buckets
+- **Row Level Security**: 52 RLS policies across 16 tables so users only touch their own content
+
+## Building Experience
+
+### Phased Build
+
+- Built in phases with a check after each one: setup and theme, auth and profiles, database and RLS, then the novel module.
+- Each phase ships as a zip without `node_modules` or `.env.local`, tested with `npm install` then `npm run dev`.
+
+### Problem-Solving
+
+- A spaced Google display name broke the profile menu, so usernames are now canonicalised in a shared helper.
+- Supabase's built-in SMTP only allows 2 emails per hour per project and only to organisation members, so a custom SMTP is needed before opening sign-ups to the public.
+
+## Impact & Results
+
+- **Phases 1–4 done**: Setup, auth, database, and the novel module are complete and building cleanly.
+- **First novel pending**: The reader and publishing flow are ready — making the first novel is the next step.
+
+## Future Enhancements
+
+- **Fanart module**: Upload and browse fanart with likes and comments.
+- **Comic module**: Paginated comic reader.
+- **Activity feed**: Likes, comments, and follows across novels, fanart, and comics.
+
+## Key Learnings
+
+- **Supabase Auth + RLS**: Auth is only half the job — RLS is what actually protects user data.
+- **Phased delivery**: Small verified phases beat one big untested build.
+- **Real testing**: Testing on a real machine catches what a local preview never shows.

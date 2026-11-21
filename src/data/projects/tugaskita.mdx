@@ -1,0 +1,76 @@
+---
+title: "TugasKita - Task Manager with Google Drive"
+shortTitle: "TugasKita"
+description: "A task manager with Google Drive integration."
+about: "A task manager with Google Drive integration"
+image: "/projects/tugaskita.svg"
+stack: ["Next.js", "Supabase", "Google Drive"]
+github: "https://github.com/Aaronabil/tugaskita"
+live: "https://tugaskita-five.vercel.app/"
+timeline: "Oct 2026"
+role: "Full-Stack Developer"
+team: "Solo"
+status: "Working"
+featured: true
+challenges: ["Google Drive OAuth with expiring refresh tokens", "Keeping tasks and Drive files in sync", "Supabase auth for a student tool"]
+learnings: ["Google Drive API with fixed-account OAuth", "Supabase Auth", "Next.js 16 App Router"]
+isPublished: true
+tags: ["Working", "Building"]
+date: "2026-10-11"
+
+---
+
+# TugasKita: A Task Manager with Google Drive
+
+## Overview
+
+TugasKita is a web app for managing coursework tasks, with Google Drive integration so task files live where students already keep them. It is built with Next.js 16, Supabase, and the Google Drive API, and deployed on Vercel.
+
+## What Users Can Do
+
+- **Manage tasks**: Create, track, and complete coursework tasks in one place.
+- **Attach Drive files**: Link task files from Google Drive via OAuth.
+- **Sign in**: Supabase Auth keeps each student's tasks private.
+
+## Why I Built This
+
+Coursework tasks and their files end up scattered across chats, drives, and notebooks. TugasKita puts the task list and the files together in one app built for how students actually work.
+
+## Tech Stack
+
+### Frontend
+
+- **Next.js**: App Router, React, TypeScript
+- **Tailwind CSS**: Utility-first styling
+
+### Backend
+
+- **Supabase**: Auth and database
+- **Google Drive API**: File access via fixed Google account OAuth tokens
+
+## Building Experience
+
+### OAuth Gotcha
+
+- The Google OAuth consent screen is still in Testing mode, so Drive refresh tokens expire every 7 days. The fix is to publish the app to Production and re-verify once — until then, tokens need refreshing weekly.
+
+### Privacy
+
+- An Indonesian privacy-policy page was written for the app, since it handles Google account data.
+
+## Impact & Results
+
+- **Live on Vercel**: The app is deployed and usable.
+- **Public repo**: The code is open on GitHub.
+
+## Future Enhancements
+
+- **Publish OAuth to Production**: Stop the 7-day refresh-token expiry.
+- **Reminders**: Deadlines and notifications for upcoming tasks.
+- **Shared tasks**: Group tasks for class projects.
+
+## Key Learnings
+
+- **OAuth Testing vs Production matters**: A Testing-mode app silently expires tokens.
+- **Privacy pages are part of the product**: Especially when Google data is involved.
+- **Ship the simple version first**: Task list + Drive links before reminders and sharing.

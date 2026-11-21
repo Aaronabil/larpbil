@@ -1,0 +1,70 @@
+---
+title: "Video Multimedia AI - 5.5-Minute Motion-Graphics Video"
+shortTitle: "Video Multimedia AI"
+description: "A 5.5-minute motion-graphics video on Teknologi & AI — 12 scenes, characters that actually move."
+about: "A 5.5-minute motion-graphics video on Teknologi & AI — 12 scenes, characters that actually move"
+image: "/projects/video-multimedia-ai.svg"
+stack: ["HTML/SVG", "Remotion", "JavaScript"]
+github: ""
+live: ""
+timeline: "Nov 2026"
+role: "Animator & Developer"
+team: "Solo"
+status: "Working"
+featured: true
+challenges: ["Making characters move, not just the camera", "Syncing kinetic text with narration", "Rendering 12 scenes frame by frame"]
+learnings: ["HTML/SVG puppet animation", "Easing functions for walk cycles", "Kinetic typography"]
+isPublished: true
+tags: ["Working", "Building"]
+date: "2026-11-03"
+
+---
+
+# Video Multimedia AI: Teknologi & AI in Motion
+
+## Overview
+
+A 5 minute 30 second motion-graphics video on the theme "Teknologi dan AI" for a Multimedia practicum — 12 scenes with Indonesian narration (611 words), a title and name/NIM/class footer on every scene, and a music bed. It is 1280x720, 30 fps, H.264 + AAC.
+
+## What the Video Shows
+
+- **12 scenes**: Each scene covers one idea about technology and AI, with flat-vector art and a moving character or object.
+- **Characters that move**: A boy walks across the scene with stepping legs, stops, and raises his phone; sound waves pulse; the map pin and route animate.
+- **Kinetic text**: Key words move in sync with the narration instead of sitting still.
+
+## Why I Built It This Way
+
+Camera movement over a still image is not animation — only the characters themselves moving counts. So every scene is a pure HTML/SVG puppet: characters and objects are built from shapes, cut into parts, and animated frame by frame (679 frames for the demo scene alone) with easing on every walk cycle.
+
+## Tech Stack
+
+- **HTML/SVG**: Every character and object is hand-built SVG, animated with code.
+- **Remotion-style rendering**: Scenes render frame by frame, then assemble into the final MP4.
+- **Narration + music**: 12 Indonesian narration tracks mixed with a music bed.
+
+## Building Experience
+
+### The Style Loop
+
+- The first versions were rejected for looking like a slideshow — camera moves, but the images themselves did not move. A single-scene demo (22.6 seconds, the boy walking and raising his phone) was approved first, and only then were all 12 scenes rebuilt in that style.
+- The rule for every rebuild since: validate the style on one scene and get a verdict before rebuilding the full video.
+
+### Rendering
+
+- Scenes are rendered frame by frame from HTML/SVG, then assembled with narration and music into the final 326-second video.
+
+## Impact & Results
+
+- **Delivered**: The full 12-scene video (25.6 MB) plus a 13-page report in Word and PDF.
+- **Approved style**: The puppet demo scene set the bar for the whole video.
+
+## Future Enhancements
+
+- **Smoother walk cycles**: Wider steps and better easing, the way the Odyssey wolf technique was refined.
+- **More scenes**: The same pipeline can carry longer videos.
+
+## Key Learnings
+
+- **Validate one scene first**: Never rebuild 12 scenes on an unapproved style.
+- **Characters must move**: Camera motion alone is not animation.
+- **Easing is everything**: The same walk looks stiff or alive depending on the easing curve.
