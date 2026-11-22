@@ -24,7 +24,7 @@ const BlogCard = ({
   onHoverStart,
   onHoverEnd,
 }: BlogCardProps) => {
-  const { slug, title, desc, date, tags } = blog;
+  const { slug, title, desc, date, tags, external } = blog;
 
   const formattedDate = new Date(`${date}T00:00:00Z`).toLocaleDateString(
     "en-US",
@@ -39,6 +39,9 @@ const BlogCard = ({
   return (
     <Link
       href={`/blog/${slug}`}
+      {...(external
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : {})}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
       onFocus={() => onHoverStart?.()}

@@ -32,6 +32,7 @@ export async function getBlogs(): Promise<Blog[]> {
           tags: Array.isArray(data.tags) ? data.tags : [],
           date: data.date,
           isPublished: data.isPublished === true,
+          external: data.external === true,
         } satisfies Blog;
       })
   );
@@ -64,6 +65,7 @@ export async function getBlogBySlug(slug: string) {
       tags: Array.isArray(data.tags) ? data.tags : [],
       date: data.date,
       isPublished: true,
+      external: data.external === true,
     };
 
     return { blog, content };

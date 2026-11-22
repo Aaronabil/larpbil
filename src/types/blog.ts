@@ -6,4 +6,5 @@ export type Blog = {
   tags: string[];
   date: string;
   isPublished: boolean;
+  external?: boolean;
 };
