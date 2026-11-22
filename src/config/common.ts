@@ -9,6 +9,7 @@ import { X } from "@/svgs/socials/X";
 export const navItems = [
   { id: 1, name: "Home", icon: Home, value: "/" },
   // { id: 2, name: "Projects", icon: Project, value: "/projects" },
+  // Blog enabled in the navbar
   { id: 3, name: "Blog", icon: Blog, value: "/blog" },
   { id: 4, name: "Resume", icon: ScrollText, value: "/resume" },
   { id: 5, name: "Contact", icon: CircleUserRound, value: "/contact" },
