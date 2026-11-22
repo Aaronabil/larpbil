@@ -2,7 +2,7 @@ import { Suspense } from "react";
 
 import { Container } from "@/components/common/Container";
 import { Reveal } from "@/components/common/Reveal";
-// import { Blog } from "@/components/home/Blog";
+import { Blog } from "@/components/home/Blog";
 // import { Experience } from "@/components/home/Experience";
 import { Github } from "@/components/home/Github";
 import { Hero } from "@/components/home/Hero";
@@ -42,9 +42,9 @@ const Page = async () => {
         <Projects />
       </Suspense> */}
 
-      {/* <Suspense fallback={<div>Loading blog...</div>}>
+      <Suspense fallback={<div>Loading blog...</div>}>
         <Blog />
-      </Suspense> */}
+      </Suspense> 
 
       <Setup />
       <Personal />
